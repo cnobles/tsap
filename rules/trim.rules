@@ -1,0 +1,40 @@
+# -*- mode: Snakemake -*-
+# Sequence Trimming Rules
+
+rule seq_trim_R1:
+  input:
+    RUN_DIR + "/processData/{sample}.R1.fastq.gz"
+  output:
+    temp(RUN_DIR + "/processData/{sample}.R1.trim.fastq.gz")
+  params:
+    tool=ROOT_DIR + "/tools/seqTrimR/seqTrim.R",
+    over=lambda wildcards: R1_OVER[wildcards.sample],
+    overMis=config["R1overMismatch"],
+    overLen=config["R1overMaxLength"]
+  log:
+    RUN_DIR + "/logs/{sample}.R1.trim.log"
+  shell:
+    """
+    Rscript {params.tool} {input} -o {output} \
+      -r {params.over} --overMisMatch {params.overMis} \
+      --overMaxLength {params.overLen} --compress > {log} 2>&1
+    """
+
+rule seq_trim_R2_:
+  input:
+    RUN_DIR + "/processData/{sample}.R2.fastq.gz"
+  output:
+    temp(RUN_DIR + "/processData/{sample}.R2.trim.fastq.gz")
+  params:
+    tool=ROOT_DIR + "/tools/seqTrimR/seqTrim.R",
+    over=lambda wildcards: R2_OVER[wildcards.sample],
+    overMis=config["R2overMismatch"],
+    overLen=config["R2overMaxLength"]
+  log:
+    RUN_DIR + "/logs/{sample}.R2.primer.trim.log"
+  shell:
+    """
+    Rscript {params.tool} {input} -o {output} \
+      -r {params.over} --overMisMatch {params.overMis} \
+      --overMaxLength {params.overLen} --compress > {log} 2>&1
+    """

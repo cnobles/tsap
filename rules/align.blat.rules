@@ -1,0 +1,28 @@
+# -*- mode: Snakemake -*-
+# Sequence Alignment: BLAT
+
+rule align:
+  input:
+    seq = RUN_DIR + "/processData/{sample}.{read}.consol.fasta",
+    genome = ancient(ROOT_DIR + "/" + config["RefGenomePath"])
+  output:
+    temp(RUN_DIR + "/processData/{sample}.{read}.psl")
+  params: 
+    config["BLATparams"]
+  log:
+    RUN_DIR + "/logs/{sample}.{read}.blat.log"
+  shell:
+    "blat {input.genome} {input.seq} {output} {params} > {log} 2>&1"
+
+rule compress_align:
+  input: RUN_DIR + "/processData/{sample}.{type}.psl"
+  output: temp(RUN_DIR + "/processData/{sample}.{type}.psl.gz")
+  shell: "gzip {input}"
+
+rule generate_2bit:
+  input: ancient("configs/" + RUN + ".config.yml")
+  output: ROOT_DIR + "/" + config["RefGenomePath"]
+  params: config["RefGenome"]
+  shell: 
+    "Rscript {ROOT_DIR}/tools/rtools/generate_2bit_genome.R {params} {output}"
+

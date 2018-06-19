@@ -6,9 +6,9 @@ channels:
   - defaults
 dependencies:
   - snakemake
-  - blat
   - bwa
   - samtools
+  - pear >= 0.9.6
   - graphviz
   - pandoc < 2.0
   - r=3.4.1
