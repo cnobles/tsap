@@ -44,7 +44,9 @@ if not os.path.isdir(ROOT_DIR):
 
 # Target Rules
 rule all:
-    input: expand(RUN_DIR + "/processData/{sample}.bai", sample = SAMPLES)
+    input: 
+      uniq=RUN_DIR + "/output/unique_aligns." + RUN + ".csv",
+      chim=RUN_DIR + "/output/chimera_aligns." + RUN + ".csv"
 
 # Architecture Rules
 include: "rules/arch.rules"
@@ -56,3 +58,4 @@ include: "rules/filt.rules"
 include: "rules/assembly.rules"
 include: "rules/consol.rules"
 include: "rules/align.rules"
+include: "rules/process.rules"

@@ -1,58 +1,46 @@
 # -*- mode: Snakemake -*-
 # Processing Rules
 
-rule all_uniq_sites:
+rule post_align_process:
   input:
-    expand(RUN_DIR + "/output/uniqSites/{sample}.uniq.csv", sample=SAMPLES)
+    bam=RUN_DIR + "/processData/{sample}.bam",
+    bai=RUN_DIR + "/processData/{sample}.bai",
+    key=RUN_DIR + "/processData/{sample}.key.csv"
   output:
-    RUN_DIR + "/output/unique_sites." + RUN + ".csv"
+    uniq=RUN_DIR + "/output/unique_aligns/{sample}.uniq.csv",
+    chim=RUN_DIR + "/output/chimera_aligns/{sample}.chim.csv"
+  params: 
+    ROOT_DIR + "/tools/rtools/post_algn_process.R"
+  log: 
+    RUN_DIR + "/logs/{sample}.postalgn.log"
+  shell:
+    """
+    Rscript {params} {input.bam} -i {input.bai} -k {input.key} \
+      -o {output.uniq} -c {output.chim} > {log} 2>&1
+    """
+
+rule collate_unique:
+  input:
+    expand(RUN_DIR + "/output/unique_aligns/{sample}.uniq.csv", sample=SAMPLES)
+  output:
+    RUN_DIR + "/output/unique_aligns." + RUN + ".csv"
   params:
     RUN_DIR + "/output"
   shell:
     """
-    head -n 1 -q {params}/uniqSites/* | uniq > {output}
-    cat {params}/uniqSites/* | sed '/seqnames/d' >> {output}
+    head -n 1 -q {params}/unique_aligns/* | uniq > {output}
+    cat {params}/unique_aligns/* | sed '/qname/d' >> {output}
     """
 
-rule all_edit_sites:
+rule collate_chimera:
   input:
-    sites = RUN_DIR + "/output/unique_sites." + RUN + ".csv",
-    umitag = all_edit_sites_inputs
+    expand(RUN_DIR + "/output/chimera_aligns/{sample}.chim.csv", sample=SAMPLES)
   output:
-    RUN_DIR + "/output/edited_sites." + RUN + ".rds"
+    RUN_DIR + "/output/chimera_aligns." + RUN + ".csv"
   params:
-    config = RUN_DIR + "/" + "config.yml",
-    tool = ROOT_DIR + "/tools/processing/post_process.R"
-  log:
-    RUN_DIR + "/logs/" + RUN + ".postproc.log"
-  run:
-    if (config["UMItags"]):
-      shell("Rscript {params.tool} {input.sites} -o {output} " + \
-        "-c {params.config} -u {input.umitag} > {log} 2>&1")
-    else:
-      shell("Rscript {params.tool} {input.sites} -o {output} " + \
-        "-c {params.config} > {log} 2>&1")
-
-def report_supp(wildcards):
-  supp_str = str()
-  if (config["figures"]): 
-      supp_str = supp_str + "-f "
-  if (config["reportData"]):
-      supp_str = supp_str + "-d "
-  if (config["suppFile"]):
-      supp_str = supp_str + "-s " + ROOT_DIR + "/" + config["Supplemental_Info"]
-  return supp_str
-        
-rule run_report:
-  input: RUN_DIR + "/output/edited_sites." + RUN + ".rds"
-  output: RUN_DIR + "/reports/report." + RUN + ".html"
-  params: 
-    tool = ROOT_DIR + "/tools/processing/generate_iGUIDE_report.R",
-    config = RUN_DIR + "/" + "config.yml",
-    supp = report_supp
-  log: RUN_DIR + "/logs/" + RUN + ".report.log"
+    RUN_DIR + "/output"
   shell:
     """
-    Rscript {params.tool} {input} -o {output} \
-      -c {params.config} {params.supp} > {log} 2>&1
+    head -n 1 -q {params}/chimera_aligns/* | uniq > {output}
+    cat {params}/chimera_aligns/* | sed '/qname/d' >> {output}
     """

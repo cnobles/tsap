@@ -1,15 +1,15 @@
 # Run configuration
-Run_Name : "init"
-Sample_Info : "sampleInfo/init.sampleInfo.csv"
-Supplemental_Info : "sampleInfo/init.supp.csv"
-Panel : "panel.init"
+Run_Name : "test"
+Sample_Info : "sampleInfo/test.sampleInfo.csv"
+Supplemental_Info : "sampleInfo/test.supp.csv"
+Panel : "panel.test"
 RefGenome : "hg38"
 
 # Sequence files
-R1: "Undetermined_S0_L001_R1_001.fastq.gz"
-R2: "Undetermined_S0_L001_R2_001.fastq.gz"
-I1: "Undetermined_S0_L001_I1_001.fastq.gz"
-I2: "Undetermined_S0_L001_I2_001.fastq.gz"
+R1: "test.R1.fastq.gz"
+R2: "test.R2.fastq.gz"
+I1: "test.I1.fastq.gz"
+I2: "test.I2.fastq.gz"
 
 # SampleInfo formating
 Sample_Name_Column : "sampleName"

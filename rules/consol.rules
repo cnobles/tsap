@@ -5,13 +5,13 @@ rule consolidate:
   input: RUN_DIR + "/processData/{sample}.assembled.fastq"
   output:
     consol=temp(RUN_DIR + "/processData/{sample}.consol.fasta"),
-    key=temp(RUN_DIR + "/processData/{sample}.key.csv")
+    key=RUN_DIR + "/processData/{sample}.key.csv"
   params:
     tool=ROOT_DIR + "/tools/seqConsolidateR/seqConsolidate.R"
   log:
     RUN_DIR + "/logs/{sample}.consol.log"
   shell:
     """
-    Rscript {params.tool} {input} -o {output.consol} -k {output.key} > {log} 2>&1
+    Rscript {params.tool} {input} -o {output.consol} -k {output.key} \
+      -l {wildcards.sample}. > {log} 2>&1
     """
-

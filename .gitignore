@@ -28,6 +28,7 @@ vignettes/*.pdf
 # knitr and R markdown default cache directories
 /*_cache/
 /cache/
+*.pyc
 
 # Temporary files created by R markdown
 *.utf8.md
@@ -39,3 +40,9 @@ rsconnect/
 
 # Snakemake files
 .snakemake
+analysis/*
+genomes/*
+tools/dualDemultiplexR
+tools/seqFiltR
+tools/seqConsolidateR
+tools/seqTrimR
