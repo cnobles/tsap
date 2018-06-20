@@ -30,6 +30,9 @@ SAMPLES=sampleInfo[config["Sample_Name_Column"]]
 TYPES=config["Read_Types"]
 READS=config["Genomic_Reads"]
 
+wildcard_constraints:
+    samples=SAMPLES
+
 # Working paths
 RUN = config["Run_Name"]
 ROOT_DIR = config["Install_Directory"]
@@ -37,11 +40,11 @@ RUN_DIR = config["Install_Directory"] + "/analysis/" + RUN
 
 # Check for directory paths.
 if not os.path.isdir(ROOT_DIR):
-    raise SystemExit("Path to iGUIDE is not found. Check configuration file.")
+    raise SystemExit("Path to vivi is not found. Check configuration file.")
 
 # Target Rules
 rule all:
-    input: RUN_DIR + "/reports/vivi.report." + RUN + ".html"
+    input: expand(RUN_DIR + "/processData/{sample}.bai", sample = SAMPLES)
 
 # Architecture Rules
 include: "rules/arch.rules"
@@ -50,13 +53,6 @@ include: "rules/arch.rules"
 include: "rules/demulti.rules"
 include: "rules/trim.rules"
 include: "rules/filt.rules"
+include: "rules/assembly.rules"
 include: "rules/consol.rules"
-if (config["Aligner"] == "BLAT" or config["Aligner"] == "blat"):
-    include: "rules/align.blat.rules"
-elif (config["Aligner"] == "BWA" or config["Aligner"] == "bwa"):
-    raise SystemExit("BWA aligner not supported yet.")
-else:
-    "Aligner: " + config["Aligner"] + " not supported."
-    "Please choose a supported option: BLAT or BWA."
-include: "rules/process.rules"
-
+include: "rules/align.rules"

@@ -1,0 +1,20 @@
+# -*- mode: Snakemake -*-
+# Sequence Uniting Rules
+
+rule seq_assembly:
+  input:
+    fwd=RUN_DIR + "/processData/{sample}.R1.trim.fastq.gz",
+    rev=RUN_DIR + "/processData/{sample}.R2.trim.fastq.gz"
+  output:
+    assembly=temp(RUN_DIR + "/processData/{sample}.assembled.fastq"),
+    unFwd=temp(RUN_DIR + "/processData/{sample}.unassembled.forward.fastq"),
+    unRev=temp(RUN_DIR + "/processData/{sample}.unassembled.reverse.fastq"),
+    dis=temp(RUN_DIR + "/processData/{sample}.discarded.fastq")
+  params:
+    config["pearParams"]
+  log:
+    RUN_DIR + "/logs/{sample}.assembled.log"
+  shell:
+    """
+    pear -f {input.fwd} -r {input.rev} -o {wildcards.sample} {params} > {log} 2>&1
+    """

@@ -1,0 +1,54 @@
+# Run configuration
+Run_Name : "init"
+Sample_Info : "sampleInfo/init.sampleInfo.csv"
+Supplemental_Info : "sampleInfo/init.supp.csv"
+Panel : "panel.init"
+RefGenome : "hg38"
+RefGenomePath : "genomes/hg38.2bit"
+
+# Sequence files
+R1: "Undetermined_S0_L001_R1_001.fastq.gz"
+R2: "Undetermined_S0_L001_R2_001.fastq.gz"
+I1: "Undetermined_S0_L001_I1_001.fastq.gz"
+I2: "Undetermined_S0_L001_I2_001.fastq.gz"
+
+# SampleInfo formating
+Sample_Name_Column : "sampleName"
+
+# Sequence information
+R1_Leading_Trim : "."
+R1_Overreading_Trim : "AGATCGGAAGAGCACACGTC"
+R2_Leading_Trim : "."
+R2_Overreading_Trim : "AGATCGGAAGAGCGTCGTGT"
+
+
+# ------------------------------------------------------------------------------
+# Vivi configuration
+Install_Directory : "/home/nobles/dev/projects/vivi"
+Read_Types : ["R1", "R2", "I1", "I2"]
+Genomic_Reads : ["R1", "R2"]
+
+# Demultiplexing parameters
+barcode1Length : 12
+barcode2Length : 12
+barcode1 : "I1"
+barcode2 : "I2"
+bc1Mismatch : 1
+bc2Mismatch : 1
+demultiCores : 4
+
+# Sequence trimming
+## R1 sequence
+R1leadMismatch : 0
+R1overMismatch : 1
+R1overMaxLength : 20
+## R2 sequence
+R2leadMismatch : 0
+R2overMismatch : 1
+R2overMaxLength : 20
+
+# Uniting paired-end Reads
+pearParams : "-p 1.0 -n 30"
+
+# Reference Alignment
+BWAparams : "-k 30 -w 150"

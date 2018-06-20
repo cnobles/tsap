@@ -15,9 +15,6 @@ rule setup_working_dir:
     mkdir logs
     mkdir processData
     mkdir output
-    mkdir output/uniqSites
-    mkdir output/chimeras
-    mkdir output/multihits
     mkdir reports
     cd ../../
 
