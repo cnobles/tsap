@@ -24,7 +24,7 @@ rule index_ref:
   params: "genomes/" + config["Panel"]
   shell:
     """
-    cp {input} {output}
+    cp {input} {output.ref}
     bwa index -p {params} {output.ref}
     """
 

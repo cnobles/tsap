@@ -5,7 +5,10 @@ rule post_align_process:
   input:
     bam=RUN_DIR + "/processData/{sample}.bam",
     bai=RUN_DIR + "/processData/{sample}.bai",
-    key=RUN_DIR + "/processData/{sample}.key.csv"
+    key=RUN_DIR + "/processData/{sample}.key.csv",
+    con=ROOT_DIR + "/configs/" + RUN + ".config.yml",
+    ref=ROOT_DIR + "/genomes/" + config["Panel"] + ".fasta",
+    tar=ROOT_DIR + "/panels/" + config["Panel"] + ".csv"
   output:
     uniq=RUN_DIR + "/output/unique_aligns/{sample}.uniq.csv",
     chim=RUN_DIR + "/output/chimera_aligns/{sample}.chim.csv"
@@ -15,8 +18,8 @@ rule post_align_process:
     RUN_DIR + "/logs/{sample}.postalgn.log"
   shell:
     """
-    Rscript {params} {input.bam} -i {input.bai} -k {input.key} \
-      -o {output.uniq} -c {output.chim} > {log} 2>&1
+    Rscript {params} {input.bam} -i {input.bai} -k {input.key} -c {input.con} \
+      -r {input.ref} -t {input.tar} -o {output.uniq} -a {output.chim} > {log} 2>&1
     """
 
 rule collate_unique:
