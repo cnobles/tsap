@@ -17,21 +17,29 @@ panderOptions("table.split.table", Inf)
 parser <- ArgumentParser(
   description = "R-based post alignment analysis focused on identifying indels.")
 parser$add_argument(
-  "bamFile", type = "character", help = "Path to bam file input.")
+  "bamFile", type = "character", 
+  help = "Path to bam file input.")
 parser$add_argument(
-  "-i", "--index", type = "character", help = "Path to index of bam file input.")
+  "-i", "--index", type = "character", 
+  help = "Path to index of bam file input.")
 parser$add_argument(
-  "-k", "--key", type = "character", help = "Path to key file for appending read count data.")
+  "-k", "--key", type = "character", 
+  help = "Path to key file for appending read count data.")
 parser$add_argument(
-  "-o", "--output", type = "character", help = "Output path for unique alignments, csv format.")
+  "-o", "--output", type = "character", 
+  help = "Output path for unique alignments, csv format.")
 parser$add_argument(
-  "-a", "--chimera", type = "character", help = "Output path for chimeric or translocation alignments.")
+  "-a", "--chimera", type = "character", 
+  help = "Output path for chimeric or translocation alignments.")
 parser$add_argument(
-  "-c", "--config", type = "character", help = "Config file for run.")
+  "-c", "--config", type = "character", 
+  help = "Config file for run.")
 parser$add_argument(
-  "-r", "--ref", type = "character", help = "Reference sequences specific to panel.")
+  "-r", "--ref", type = "character", 
+  help = "Reference sequences specific to panel.")
 parser$add_argument(
-  "-t", "--target", type = "character", help = "Panel target file, csv format.")
+  "-t", "--target", type = "character", 
+  help = "Panel target file, csv format.")
 
 args <- parser$parse_args(commandArgs(trailingOnly = TRUE))
 
@@ -74,6 +82,7 @@ cntSym <- function(cigar, sym, max.only = FALSE){
   ex_mat <- stringr::str_extract_all(cigar, match_sym, simplify = TRUE)
   ex_mat <- as.numeric(gsub(sym, "", ifelse(nchar(ex_mat) == 0, 0, ex_mat)))
   ex_mat <- matrix(ex_mat, nrow = length(cigar))
+  if(ncol(ex_mat) == 0) ex_mat <- matrix(rep(0, length(cigar)), ncol = 1)
   
   if(max.only){
     return(ex_mat[
@@ -135,6 +144,8 @@ normalizeTargets <- function(posid, base.ref, tar.seqs, tar.seqinfo,
 }
 
 cigarRanges <- function(rname, cigar, pos, sym, seq.info){
+  sym <- unlist(strsplit(sym, ""))
+  
   # Parse cigar strings
   comp_sym <- IRanges::CharacterList(stringr::str_split(cigar, "[0-9]+"))
   comp_sym <- comp_sym[which(comp_sym != "")]
@@ -169,7 +180,7 @@ cigarRanges <- function(rname, cigar, pos, sym, seq.info){
       end = unlist(mdi_end[!insert_log])),
     strand = "+",
     seqinfo = seq.info,
-    "order" = rep(seq_along(rname), lengths(mdi_start[!insert_log])),
+    "index" = rep(seq_along(rname), lengths(mdi_start[!insert_log])),
     "symbol" = unlist(comp_sym[!insert_log]),
     "in.len" = NA)
   
@@ -179,9 +190,9 @@ cigarRanges <- function(rname, cigar, pos, sym, seq.info){
     ranges = IRanges::IRanges(
       start = unlist(mdi_start[insert_log]), 
       end = unlist(mdi_end[insert_log])),
-    strand = "+",
+    strand = rep("+", sum(lengths(mdi_start[insert_log]))),
     seqinfo = seq.info,
-    "order" = rep(seq_along(rname), lengths(mdi_start[insert_log])),
+    "index" = rep(seq_along(rname), lengths(mdi_start[insert_log])),
     "symbol" = unlist(comp_sym[insert_log]),
     "in.len" = unlist(insert_val))
   
@@ -192,7 +203,7 @@ cigarRanges <- function(rname, cigar, pos, sym, seq.info){
   gr <- gr[gr$symbol %in% sym]
   
   # Return GRangesList
-  split(gr, gr$order)
+  split(gr, gr$index)
 }
 
 # Import inputs for analysis ---------------------------------------------------
@@ -210,7 +221,8 @@ ref_seqinfo <- GenomeInfoDb::Seqinfo(
 base_gen <- getGenome(config$RefGenome)
 
 ## Panel targets
-panel_targets <- read.csv(args$target)
+panel_targets <- read.csv(
+  file.path(config$Install_Directory, config$Panel_Path))
 targets <- structure(panel_targets$locus, names = panel_targets$target)
 norm_targets <- normalizeTargets(
   targets, base_gen, ref_seqs, ref_seqinfo, return = "granges")
@@ -255,11 +267,12 @@ uniq_indel_grl <- uniq_algns %$%
   cigarRanges(
     rname, cigar, pos, sym = c("D", "I"), seq.info = ref_seqinfo)
 
-indel_algns <- S4Vectors::subjectHits(
-  GenomicRanges::findOverlaps(norm_targets, uniq_indel_grl, maxgap = 20))
+indel_algns <- S4Vectors::subjectHits(GenomicRanges::findOverlaps(
+    norm_targets, uniq_indel_grl, maxgap = config$maxDistFromEdit))
 
 uniq_algns <- dplyr::mutate(
-  uniq_algns, tar.indel = seq_len(n()) %in% indel_algns)
+  uniq_algns, tar.indel = seq_len(n()) %in% 
+    as.numeric(names(uniq_indel_grl[indel_algns])))
 
 if(!is.null(args$key)){
   uniq_algns <- dplyr::left_join(uniq_algns, key, by = c("qname" = "seqID"))

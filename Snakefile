@@ -42,11 +42,16 @@ RUN_DIR = config["Install_Directory"] + "/analysis/" + RUN
 if not os.path.isdir(ROOT_DIR):
     raise SystemExit("Path to vivi is not found. Check configuration file.")
 
+# Summary Report File
+report_output = RUN_DIR + "/reports/report." + RUN
+if (config["format"] == "pdf"):
+  report_output = report_output + ".pdf"
+elif (config["format"] == "html"):
+  report_output = report_output + ".html"
+
 # Target Rules
 rule all:
-    input: 
-      uniq=RUN_DIR + "/output/unique_aligns." + RUN + ".csv",
-      chim=RUN_DIR + "/output/chimera_aligns." + RUN + ".csv"
+    input: report_output
 
 # Architecture Rules
 include: "rules/arch.rules"

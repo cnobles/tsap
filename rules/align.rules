@@ -2,7 +2,7 @@
 # Sequence Alignment: BWA based
 
 rule build_ref:
-  input: "panels/" + config["Panel"] + ".csv"
+  input: ROOT_DIR + "/" + config["Panel_Path"]
   output: temp("genomes/" + config["Panel"] + ".tmp.fasta")
   params: 
     tool="tools/rtools/gen_panal_refs.R",
@@ -28,7 +28,62 @@ rule index_ref:
     bwa index -p {params} {output.ref}
     """
 
-rule align:
+rule align_R1:
+  input:
+    seq=RUN_DIR + "/processData/{sample}.R1.trim.fastq.gz",
+    genome=ancient("genomes/" + config["Panel"] + ".fasta"),
+    aux1=ancient("genomes/" + config["Panel"] + ".amb"),
+    aux2=ancient("genomes/" + config["Panel"] + ".ann"),
+    aux3=ancient("genomes/" + config["Panel"] + ".bwt"),
+    aux4=ancient("genomes/" + config["Panel"] + ".pac"),
+    aux5=ancient("genomes/" + config["Panel"] + ".sa")
+  output:
+    temp(RUN_DIR + "/processData/{sample}.R1.pre.unsorted.bam")
+  params: 
+    bwa=config["BWAparams"],
+    index="genomes/" + config["Panel"]
+  shell:
+    "bwa mem {params.bwa} {params.index} {input.seq} | samtools view -b -o {output}"
+
+
+rule sort_R1:
+  input: RUN_DIR + "/processData/{sample}.R1.pre.unsorted.bam"
+  output: temp(RUN_DIR + "/processData/{sample}.R1.pre.bam")
+  shell: "samtools sort {input} -o {output}"
+
+rule index_R1:
+  input: RUN_DIR + "/processData/{sample}.R1.pre.bam"
+  output: temp(RUN_DIR + "/processData/{sample}.R1.pre.bai")
+  shell: "samtools index -b {input} {output}"
+
+rule align_R2:
+  input:
+    seq=RUN_DIR + "/processData/{sample}.R2.trim.fastq.gz",
+    genome=ancient("genomes/" + config["Panel"] + ".fasta"),
+    aux1=ancient("genomes/" + config["Panel"] + ".amb"),
+    aux2=ancient("genomes/" + config["Panel"] + ".ann"),
+    aux3=ancient("genomes/" + config["Panel"] + ".bwt"),
+    aux4=ancient("genomes/" + config["Panel"] + ".pac"),
+    aux5=ancient("genomes/" + config["Panel"] + ".sa")
+  output:
+    temp(RUN_DIR + "/processData/{sample}.R2.pre.unsorted.bam")
+  params: 
+    bwa=config["BWAparams"],
+    index="genomes/" + config["Panel"]
+  shell:
+    "bwa mem {params.bwa} {params.index} {input.seq} | samtools view -b -o {output}"
+
+rule sort_R2:
+  input: RUN_DIR + "/processData/{sample}.R2.pre.unsorted.bam"
+  output: temp(RUN_DIR + "/processData/{sample}.R2.pre.bam")
+  shell: "samtools sort {input} -o {output}"
+
+rule index_R2:
+  input: RUN_DIR + "/processData/{sample}.R2.pre.bam"
+  output: temp(RUN_DIR + "/processData/{sample}.R2.pre.bai")
+  shell: "samtools index -b {input} {output}"
+
+rule align_merged:
   input:
     seq=RUN_DIR + "/processData/{sample}.consol.fasta",
     genome=ancient("genomes/" + config["Panel"] + ".fasta"),
@@ -38,7 +93,7 @@ rule align:
     aux4=ancient("genomes/" + config["Panel"] + ".pac"),
     aux5=ancient("genomes/" + config["Panel"] + ".sa")
   output:
-    temp(RUN_DIR + "/processData/{sample}.unsorted.bam")
+    temp(RUN_DIR + "/processData/{sample}.post.unsorted.bam")
   params: 
     bwa=config["BWAparams"],
     index="genomes/" + config["Panel"]
@@ -46,11 +101,11 @@ rule align:
     "bwa mem {params.bwa} {params.index} {input.seq} | samtools view -b -o {output}"
     
 rule sort_bam:
-  input: RUN_DIR + "/processData/{sample}.unsorted.bam"
-  output: RUN_DIR + "/processData/{sample}.bam"
+  input: RUN_DIR + "/processData/{sample}.post.unsorted.bam"
+  output: RUN_DIR + "/processData/{sample}.post.bam"
   shell: "samtools sort {input} -o {output}"
 
 rule index_bam:
-  input: RUN_DIR + "/processData/{sample}.bam"
-  output: RUN_DIR + "/processData/{sample}.bai"
+  input: RUN_DIR + "/processData/{sample}.post.bam"
+  output: RUN_DIR + "/processData/{sample}.post.bai"
   shell: "samtools index -b {input} {output}"

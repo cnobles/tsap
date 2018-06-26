@@ -3,32 +3,27 @@
 
 rule post_align_process:
   input:
-    bam=RUN_DIR + "/processData/{sample}.bam",
-    bai=RUN_DIR + "/processData/{sample}.bai",
+    bam=RUN_DIR + "/processData/{sample}.post.bam",
+    bai=RUN_DIR + "/processData/{sample}.post.bai",
     key=RUN_DIR + "/processData/{sample}.key.csv",
-    con=ROOT_DIR + "/configs/" + RUN + ".config.yml",
-    ref=ROOT_DIR + "/genomes/" + config["Panel"] + ".fasta",
-    tar=ROOT_DIR + "/panels/" + config["Panel"] + ".csv"
+    con=ancient(RUN_DIR + "/config.yml"),
+    ref=ancient(ROOT_DIR + "/genomes/" + config["Panel"] + ".fasta")
   output:
     uniq=RUN_DIR + "/output/unique_aligns/{sample}.uniq.csv",
     chim=RUN_DIR + "/output/chimera_aligns/{sample}.chim.csv"
-  params: 
-    ROOT_DIR + "/tools/rtools/post_algn_process.R"
-  log: 
-    RUN_DIR + "/logs/{sample}.postalgn.log"
+  params: ROOT_DIR + "/tools/rtools/post_algn_process.R"
+  log: RUN_DIR + "/logs/{sample}.postalgn.log"
   shell:
     """
     Rscript {params} {input.bam} -i {input.bai} -k {input.key} -c {input.con} \
-      -r {input.ref} -t {input.tar} -o {output.uniq} -a {output.chim} > {log} 2>&1
+      -r {input.ref} -o {output.uniq} -a {output.chim} > {log} 2>&1
     """
 
 rule collate_unique:
   input:
     expand(RUN_DIR + "/output/unique_aligns/{sample}.uniq.csv", sample=SAMPLES)
-  output:
-    RUN_DIR + "/output/unique_aligns." + RUN + ".csv"
-  params:
-    RUN_DIR + "/output"
+  output: RUN_DIR + "/output/unique_aligns." + RUN + ".csv"
+  params: RUN_DIR + "/output"
   shell:
     """
     head -n 1 -q {params}/unique_aligns/* | uniq > {output}
@@ -38,12 +33,39 @@ rule collate_unique:
 rule collate_chimera:
   input:
     expand(RUN_DIR + "/output/chimera_aligns/{sample}.chim.csv", sample=SAMPLES)
-  output:
-    RUN_DIR + "/output/chimera_aligns." + RUN + ".csv"
-  params:
-    RUN_DIR + "/output"
+  output: RUN_DIR + "/output/chimera_aligns." + RUN + ".csv"
+  params: RUN_DIR + "/output"
   shell:
     """
     head -n 1 -q {params}/chimera_aligns/* | uniq > {output}
     cat {params}/chimera_aligns/* | sed '/qname/d' >> {output}
+    """
+
+def report_supp(wildcards):
+  supp_str = str()
+  if (config["format"] == "pdf"):
+      supp_str = supp_str + "-t pdf "
+  if (config["figures"]):
+      supp_str = supp_str + "-f "
+  if (config["reportData"]):
+      supp_str = supp_str + "-d "
+  if (config["suppFile"]):
+      supp_str = supp_str + "-s " + ROOT_DIR + "/" + config["Supplemental_Info"]
+  return supp_str
+
+rule generate_summary:
+  input:
+    uni=RUN_DIR + "/output/unique_aligns." + RUN + ".csv",
+    chi=RUN_DIR + "/output/chimera_aligns." + RUN + ".csv",
+    con=RUN_DIR + "/config.yml",
+    ref=ROOT_DIR + "/genomes/" + config["Panel"] + ".fasta"
+  output: report_output
+  params:
+    tool=ROOT_DIR + "/tools/rtools/generate_summary.R",
+    supp=report_supp
+  log: RUN_DIR + "/logs/" + RUN + ".report.log"
+  shell:
+    """
+    Rscript {params.tool} -u {input.uni} -a {input.chi} -c {input.con}\
+      -o {output} -r {input.ref} {params.supp} > {log} 2>&1
     """

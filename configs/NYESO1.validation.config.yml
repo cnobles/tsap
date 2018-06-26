@@ -1,8 +1,10 @@
 # Run configuration
-Run_Name : "init"
+Run_Name : "NYESO1.validation"
+Desc_Name : "NY-ESO-1 Transduction Product Editing Validation"
 Sample_Info : "sampleInfo/init.sampleInfo.csv"
 Supplemental_Info : "sampleInfo/init.supp.csv"
 Panel : "panel.init"
+Panel_Path : "panels/panel.init.csv"
 RefGenome : "hg38"
 
 # Sequence files
@@ -47,7 +49,26 @@ R2overMismatch : 1
 R2overMaxLength : 20
 
 # Uniting paired-end Reads
-pearParams : "-p 1.0 -n 30"
+minOverlap : 10
+pearParams : "-p 1.0 -m 300 -n 50 -v 10 -b 30"
 
 # Reference Alignment
 BWAparams : "-k 30 -w 150"
+
+# Post-Alignment Processing
+maxDistFromEdit : 20
+
+# Summary Report Options
+format : "pdf"
+figures : FALSE
+reportData : FALSE
+suppFile : FALSE
+discussion :
+    include : TRUE
+    path : "analysis/NYESO1.validation/reports/discussion.Rmd"
+methods : TRUE
+signature : 
+    include : TRUE
+    positions :
+        analyst : ["Bioinformatic Analyst", "Christopher Nobles, Ph.D."]
+        investigator : ["Principle Investigator", "Frederic Bushman, Ph.D."]

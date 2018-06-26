@@ -1,0 +1,19 @@
+\newpage
+
+# Certification of Analysis and Review
+The tables and figures in this analysis (*`r config$Desc_Name`*) were generated with software freely available at [**GitHub@cnobles**](https://github.com/cnobles) and were subsequently reviewed together by the `r paste(names(config$signature$positions), collapse = " and ")`.
+
+\vspace*{2\baselineskip}
+
+**Verifying signatures**
+
+```{r sig_block}
+null <- lapply(seq_along(config$signature$positions), function(i){
+  cat(paste0(
+    paste(config$signature$positions[[i]], collapse = ": "), "\n",
+    "\n",
+    "\\vspace*{1\\baselineskip}\n",
+    "X____________________    date: ___________________\n",
+    "\\vspace*{2\\baselineskip}\n\n"))
+})
+```

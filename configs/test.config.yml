@@ -3,6 +3,7 @@ Run_Name : "test"
 Sample_Info : "sampleInfo/test.sampleInfo.csv"
 Supplemental_Info : "sampleInfo/test.supp.csv"
 Panel : "panel.test"
+Panel_Path : "panels/panel.test.csv"
 RefGenome : "hg38"
 
 # Sequence files
@@ -51,3 +52,12 @@ pearParams : "-p 1.0 -n 30"
 
 # Reference Alignment
 BWAparams : "-k 30 -w 150"
+
+# Post-Alignment Processing
+maxDistFromEdit : 20
+
+# Summary Report Options
+format : "html"
+figures : FALSE
+reportData : FALSE
+suppFile : FALSE

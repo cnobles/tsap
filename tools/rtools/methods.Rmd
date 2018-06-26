@@ -1,0 +1,38 @@
+\newpage
+# Methods
+
+Methods like iGUIDE and GUIDE-seq offer an unbiased sampling of nuclease editing, yet cannot be applied to theraputic products for validation. In order to verify presence of editing at specific on and off targets, targeted amplicon sequening must be employed. In this method, primers flanking the genomic location of interested are used to amplify the sequence from an isolated specimen's DNA through conventional PCR. The amplicon product is then subjected to a second round of PCR to append barcoding and NGS technology related sequences. Below is the protocol used to amplify these samples and a table of primer sequences.
+
+## PCR 1 - Amplifying targeted regions
+
+Two methods were used to amplify genomic regions, either single-plex (conducting each targeted PCR individually) or multiplex (performing all reactions within a single tube). Specimen DNA was included at 50 ng amount for each reaction, while primer concentrations were kept at 500 nM for both single-plex and multiplex (concentration per primer). PCR 1 was formulated using the Advantage 2 *Taq* Polymerase reaction buffer and enzyme (CloneTech). Thermocycling conditions were conducted as follows (with temperatures in celcius): 95\(^\circ \) for 30s, 45 cycles of 95\(^\circ \) for 30s, 70\(^\circ \)-61\(^\circ \) for 30s (dropping 1\(^\circ \) per 5 cycles), and 68\(^\circ \) for 30s, followed by a final extension at 68\(^\circ \) for 1 min. 
+
+## PCR 2 - Appending barcode and NGS-related sequences
+
+For PCR 2, 2 \(\mu L\) of each single-plex reaction were pooled together with respect to original specimen. Single-plex pools and multiplex reactions were then purified using an AMPure XP bead protocol, elution at 20 \(\mu L\), of which 10 \(\mu L\) was used as template for PCR 2. PCR 2 was formulated with Advantage 2 *Taq* polymerase buffer and enzyme, as in PCR 1. Additionally, forward and reverse primers were based on unique barcode combinations for each sample and used at a final concentration of 100 \(\mu M\). Thermocycling conditions were conducted as follows (with temperatures in celcius): 95\(^\circ \) for 30s, 10 cycles of 95\(^\circ \) for 30s, 65\(^\circ \) for 30s, and 68\(^\circ \) for 30s, followed by a final extension at 68\(^\circ \) for 1 min.
+
+## Pooling and library preparation
+PCR 2 products were purified using the AMPure XP bead assay and quantified with picoGreen (total DNA concentration) and KAPA qPCR (amplicon concentration) assays. Samples were pooled together to form a single sequencing library at equimolar concentrations between samples. The resulting library concentration was verified by KAPA qPCR and sequenced on an Illumina MiSeq with a 300-cycle V2 Standard flowcell sequencing kit.
+
+## Data analysis
+Sequences were analyzed using a custom pipeline developed by the laboratory of Frederic Bushman, Ph.D. Illumina output files were demultiplexed and trimmed for appended sequences and quality. Resulting paired-end reads were joined together by overlaping regions and aligned to `r config$RefGenome` references of targeted regions using Burrows-Wheeler Alignment Tool (BWA, v0.7.17). Software for this analysis is available at [**GitHub@cnobles**](https://github.com/cnobles).
+
+\newpage
+## Tables of nucleic acids
+
+```{r loci_tbl}
+panel <- read.csv(file.path(config$Install_Directory, config$Panel_Path), header = TRUE)
+panel$locus <- gsub(";", "\n", panel$locus)
+panel$edit <- gsub("null", "control", panel$edit)
+names(panel) <- c("Target", "Locus", "Type", "Fwd Primer", "Rev Primer")
+panel <- panel %>%
+  gather(Primer, Sequence, -Target, -Locus, -Type) %>%
+  mutate(
+    Primer = gsub(" Primer", "", Primer),
+    Sequence = split_char(Sequence, 36, "-\n"))
+
+pandoc.table(
+  panel, style = "multiline", keep.line.breaks = TRUE, split.cells = 5,
+  emphasize.verbatim.cols = 5, justify = 'ccccl',
+  caption = "Loci specific primer pairs used in PCR 1.")
+```
