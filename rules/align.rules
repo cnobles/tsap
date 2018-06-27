@@ -30,7 +30,7 @@ rule index_ref:
 
 rule align_R1:
   input:
-    seq=RUN_DIR + "/processData/{sample}.R1.trim.fastq.gz",
+    seq=RUN_DIR + "/processData/{sample}.R1.fastq.gz",
     genome=ancient("genomes/" + config["Panel"] + ".fasta"),
     aux1=ancient("genomes/" + config["Panel"] + ".amb"),
     aux2=ancient("genomes/" + config["Panel"] + ".ann"),
@@ -45,7 +45,6 @@ rule align_R1:
   shell:
     "bwa mem {params.bwa} {params.index} {input.seq} | samtools view -b -o {output}"
 
-
 rule sort_R1:
   input: RUN_DIR + "/processData/{sample}.R1.pre.unsorted.bam"
   output: temp(RUN_DIR + "/processData/{sample}.R1.pre.bam")
@@ -58,7 +57,7 @@ rule index_R1:
 
 rule align_R2:
   input:
-    seq=RUN_DIR + "/processData/{sample}.R2.trim.fastq.gz",
+    seq=RUN_DIR + "/processData/{sample}.R2.fastq.gz",
     genome=ancient("genomes/" + config["Panel"] + ".fasta"),
     aux1=ancient("genomes/" + config["Panel"] + ".amb"),
     aux2=ancient("genomes/" + config["Panel"] + ".ann"),
