@@ -7,11 +7,11 @@ rule post_align_process:
     bai=RUN_DIR + "/processData/{sample}.post.bai",
     key=RUN_DIR + "/processData/{sample}.key.csv",
     con=ancient(RUN_DIR + "/config.yml"),
-    ref=ancient(ROOT_DIR + "/genomes/" + config["Panel"] + ".fasta")
+    ref=ROOT_DIR + "/genomes/" + PANEL + ".fasta"
   output:
     uniq=RUN_DIR + "/output/unique_aligns/{sample}.uniq.csv",
     chim=RUN_DIR + "/output/chimera_aligns/{sample}.chim.csv"
-  params: ROOT_DIR + "/tools/rtools/post_algn_process.R"
+  params: ROOT_DIR + "/tools/rscripts/post_algn_process.R"
   log: RUN_DIR + "/logs/{sample}.postalgn.log"
   shell:
     """
@@ -58,10 +58,10 @@ rule generate_summary:
     uni=RUN_DIR + "/output/unique_aligns." + RUN + ".csv",
     chi=RUN_DIR + "/output/chimera_aligns." + RUN + ".csv",
     con=RUN_DIR + "/config.yml",
-    ref=ROOT_DIR + "/genomes/" + config["Panel"] + ".fasta"
+    ref=ROOT_DIR + "/genomes/" + PANEL + ".fasta"
   output: report_output
   params:
-    tool=ROOT_DIR + "/tools/rtools/generate_summary.R",
+    tool=ROOT_DIR + "/tools/rscripts/generate_summary.R",
     supp=report_supp
   log: RUN_DIR + "/logs/" + RUN + ".report.log"
   shell:

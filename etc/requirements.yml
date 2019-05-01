@@ -10,22 +10,27 @@ dependencies:
   - samtools
   - pear >= 0.9.6
   - graphviz
-  - pandoc < 2.0
-  - r=3.4.1
+  - pandoc
+  - semantic_version
+  - ruamel.yaml
+  - r=3.5.1
   - r-base
   - r-argparse
   - r-pander
+  - r-kableextra
   - r-yaml
   - r-tidyverse
   - r-magrittr
+  - r-ggforce
   - r-data.table
   - r-matrix
   - r-igraph
-  - r-rmarkdown < 1.9
-  - r-knitr < 1.18
-  - r-reshape2
+  - r-rmarkdown
+  - r-knitr
   - r-scales
   - r-rcolorbrewer
+  - r-digest
+  - r-statmod
   - r-devtools
   - bioconductor-biocgenerics
   - bioconductor-iranges

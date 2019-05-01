@@ -7,11 +7,11 @@ rule check_ovlp:
     baiR1=RUN_DIR + "/processData/{sample}.R1.pre.bai",
     bamR2=RUN_DIR + "/processData/{sample}.R2.pre.bam",
     baiR2=RUN_DIR + "/processData/{sample}.R2.pre.bai",
-    ref=ancient("genomes/" + config["Panel"] + ".fasta")
+    ref=ancient(ROOT_DIR + "/genomes/" + PANEL + ".fasta")
   output:
     temp(RUN_DIR + "/processData/{sample}.ovlp.txt")
   params:
-    tool=ROOT_DIR + "/tools/rtools/which_overlap.R",
+    tool=ROOT_DIR + "/tools/rscripts/which_overlap.R",
     min=config["minOverlap"]
   log:
     RUN_DIR + "/logs/{sample}.which.log"
@@ -30,7 +30,7 @@ rule seq_filter_R1:
   output:
     temp(RUN_DIR + "/processData/{sample}.R1.filt.fastq.gz")
   params:
-    tool=ROOT_DIR + "/tools/seqFiltR/seqFilt.R"
+    tool=ROOT_DIR + "/tools/rscripts/filt.R"
   log:
     RUN_DIR + "/logs/{sample}.filt.log"
   shell:
@@ -46,7 +46,7 @@ rule seq_filter_R2:
   output:
     temp(RUN_DIR + "/processData/{sample}.R2.filt.fastq.gz")
   params:
-    tool=ROOT_DIR + "/tools/seqFiltR/seqFilt.R"
+    tool=ROOT_DIR + "/tools/rscripts/filt.R"
   log:
     RUN_DIR + "/logs/{sample}.filt.log"
   shell:

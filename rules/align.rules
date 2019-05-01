@@ -3,9 +3,9 @@
 
 rule build_ref:
   input: ROOT_DIR + "/" + config["Panel_Path"]
-  output: temp("genomes/" + config["Panel"] + ".tmp.fasta")
+  output: temp(ROOT_DIR + "/genomes/" + PANEL + ".tmp.fasta")
   params: 
-    tool="tools/rtools/gen_panal_refs.R",
+    tool="tools/rscripts/gen_panal_refs.R",
     ref=config["RefGenome"]
   log:
     RUN_DIR + "/logs/panel.ref.log"
@@ -13,15 +13,15 @@ rule build_ref:
     "Rscript {params.tool} {input} -o {output} -r {params.ref} > {log} 2>&1"
 
 rule index_ref:
-  input: "genomes/" + config["Panel"] + ".tmp.fasta"
+  input: ROOT_DIR + "/genomes/" + PANEL + ".tmp.fasta"
   output: 
-    ref="genomes/" + config["Panel"] + ".fasta",
-    aux1="genomes/" + config["Panel"] + ".amb",
-    aux2="genomes/" + config["Panel"] + ".ann",
-    aux3="genomes/" + config["Panel"] + ".bwt",
-    aux4="genomes/" + config["Panel"] + ".pac",
-    aux5="genomes/" + config["Panel"] + ".sa"
-  params: "genomes/" + config["Panel"]
+    ref=ROOT_DIR + "/genomes/" + PANEL + ".fasta",
+    aux1=ROOT_DIR + "/genomes/" + PANEL + ".amb",
+    aux2=ROOT_DIR + "/genomes/" + PANEL + ".ann",
+    aux3=ROOT_DIR + "/genomes/" + PANEL + ".bwt",
+    aux4=ROOT_DIR + "/genomes/" + PANEL + ".pac",
+    aux5=ROOT_DIR + "/genomes/" + PANEL + ".sa"
+  params: ROOT_DIR + "/genomes/" + PANEL
   shell:
     """
     cp {input} {output.ref}
@@ -31,17 +31,17 @@ rule index_ref:
 rule align_R1:
   input:
     seq=RUN_DIR + "/processData/{sample}.R1.fastq.gz",
-    genome=ancient("genomes/" + config["Panel"] + ".fasta"),
-    aux1=ancient("genomes/" + config["Panel"] + ".amb"),
-    aux2=ancient("genomes/" + config["Panel"] + ".ann"),
-    aux3=ancient("genomes/" + config["Panel"] + ".bwt"),
-    aux4=ancient("genomes/" + config["Panel"] + ".pac"),
-    aux5=ancient("genomes/" + config["Panel"] + ".sa")
+    genome=ancient(ROOT_DIR + "/genomes/" + PANEL + ".fasta"),
+    aux1=ancient(ROOT_DIR + "/genomes/" + PANEL + ".amb"),
+    aux2=ancient(ROOT_DIR + "/genomes/" + PANEL + ".ann"),
+    aux3=ancient(ROOT_DIR + "/genomes/" + PANEL + ".bwt"),
+    aux4=ancient(ROOT_DIR + "/genomes/" + PANEL + ".pac"),
+    aux5=ancient(ROOT_DIR + "/genomes/" + PANEL + ".sa")
   output:
     temp(RUN_DIR + "/processData/{sample}.R1.pre.unsorted.bam")
   params: 
     bwa=config["BWAparams"],
-    index="genomes/" + config["Panel"]
+    index=ROOT_DIR + "/genomes/" + PANEL
   shell:
     "bwa mem {params.bwa} {params.index} {input.seq} | samtools view -b -o {output}"
 
@@ -58,17 +58,17 @@ rule index_R1:
 rule align_R2:
   input:
     seq=RUN_DIR + "/processData/{sample}.R2.fastq.gz",
-    genome=ancient("genomes/" + config["Panel"] + ".fasta"),
-    aux1=ancient("genomes/" + config["Panel"] + ".amb"),
-    aux2=ancient("genomes/" + config["Panel"] + ".ann"),
-    aux3=ancient("genomes/" + config["Panel"] + ".bwt"),
-    aux4=ancient("genomes/" + config["Panel"] + ".pac"),
-    aux5=ancient("genomes/" + config["Panel"] + ".sa")
+    genome=ancient(ROOT_DIR + "/genomes/" + PANEL + ".fasta"),
+    aux1=ancient(ROOT_DIR + "/genomes/" + PANEL + ".amb"),
+    aux2=ancient(ROOT_DIR + "/genomes/" + PANEL + ".ann"),
+    aux3=ancient(ROOT_DIR + "/genomes/" + PANEL + ".bwt"),
+    aux4=ancient(ROOT_DIR + "/genomes/" + PANEL + ".pac"),
+    aux5=ancient(ROOT_DIR + "/genomes/" + PANEL + ".sa")
   output:
     temp(RUN_DIR + "/processData/{sample}.R2.pre.unsorted.bam")
   params: 
     bwa=config["BWAparams"],
-    index="genomes/" + config["Panel"]
+    index=ROOT_DIR + "/genomes/" + PANEL
   shell:
     "bwa mem {params.bwa} {params.index} {input.seq} | samtools view -b -o {output}"
 
@@ -85,17 +85,17 @@ rule index_R2:
 rule align_merged:
   input:
     seq=RUN_DIR + "/processData/{sample}.consol.fasta",
-    genome=ancient("genomes/" + config["Panel"] + ".fasta"),
-    aux1=ancient("genomes/" + config["Panel"] + ".amb"),
-    aux2=ancient("genomes/" + config["Panel"] + ".ann"),
-    aux3=ancient("genomes/" + config["Panel"] + ".bwt"),
-    aux4=ancient("genomes/" + config["Panel"] + ".pac"),
-    aux5=ancient("genomes/" + config["Panel"] + ".sa")
+    genome=ancient(ROOT_DIR + "/genomes/" + PANEL + ".fasta"),
+    aux1=ancient(ROOT_DIR + "/genomes/" + PANEL + ".amb"),
+    aux2=ancient(ROOT_DIR + "/genomes/" + PANEL + ".ann"),
+    aux3=ancient(ROOT_DIR + "/genomes/" + PANEL + ".bwt"),
+    aux4=ancient(ROOT_DIR + "/genomes/" + PANEL + ".pac"),
+    aux5=ancient(ROOT_DIR + "/genomes/" + PANEL + ".sa")
   output:
     temp(RUN_DIR + "/processData/{sample}.post.unsorted.bam")
   params: 
     bwa=config["BWAparams"],
-    index="genomes/" + config["Panel"]
+    index=ROOT_DIR + "/genomes/" + PANEL
   shell:
     "bwa mem {params.bwa} {params.index} {input.seq} | samtools view -b -o {output}"
     

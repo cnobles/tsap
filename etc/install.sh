@@ -25,9 +25,9 @@ conda config --prepend channels 'bioconda'
 
 # Create enviroment if it does not exist
 conda env list | grep -Fxq ${VIVI_ENV_NAME} || {
-    conda env create --name ${VIVI_ENV_NAME} --file bin/build.v0.1.0.yml >> ${OUTPUT}
+    conda env create --name ${VIVI_ENV_NAME} --file etc/build.v0.2.0.yml >> ${OUTPUT}
     source activate ${VIVI_ENV_NAME}
-    Rscript bin/setup.R >> ${OUTPUT}
+    Rscript etc/setup.R >> ${OUTPUT}
     cd tools
     git clone https://github.com/cnobles/dualDemultiplexR.git >> ${OUTPUT}
     git clone https://github.com/cnobles/seqTrimR.git >> ${OUTPUT}
@@ -37,9 +37,11 @@ conda env list | grep -Fxq ${VIVI_ENV_NAME} || {
     echo -e "Vivi successfully installed.\n" ;
 }
 
-echo -e "To get started, ensure ${PREFIX}/bin is in your path and\n" \
-  "run 'source activate ${VIVI_ENV_NAME}'\n\n" \
-  "To ensure ${PREFIX}/bin is in your path each time you log in,\n" \
-  "append the following to your .bashrc or .bash_profile:\n\n" \
-  "# Append miniconda3/bin to path\n" \
-  "export PATH='~/miniconda3/bin:${PATH}'\n"
+echo -e "** Conda was not detected on your PATH. **\n" \
+  "This is normal if you have not installed Conda before.\n" \
+  "To add it to your current .bashrc to be sourced during shell\n" \
+  "startup, run:\n" \
+  "   'echo \"# Added to activate conda within shell\" >> ~/.bashrc\n" \
+  "   'echo \"source ~/miniconda3/etc/profile.d/conda.sh\" >> ~/.bashrc\n" \
+  "and close and re-open your terminal session to apply.\n" \
+  "When finished, run 'conda activate ${VIVI_ENV_NAME}' to begin.\n"

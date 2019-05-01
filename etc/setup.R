@@ -12,20 +12,23 @@ bioc_libs <- c(
 
 # Install developmental based packages from github
 options(unzip = "internal")
-devtools::install_github(
-  "cnobles/gintools",
-  repos = "https://mran.microsoft.com/snapshot/2018-05-01/",
-  upgrade_dependencies = FALSE,
-  dependencies = FALSE)
+#devtools::install_github(
+#  "cnobles/gintools",
+#  repos = "https://mran.microsoft.com/snapshot/2018-05-01/",
+#  upgrade_dependencies = FALSE,
+#  dependencies = FALSE)
 
-all_required <- c(r_libs, bioc_libs, "gintools")
+all_required <- c(r_libs, bioc_libs)
+
 is_installed <- suppressMessages(
-  sapply(all_required, require, character.only = TRUE))
+  sapply(all_required, require, character.only = TRUE)
+)
 
 print(data.frame(
   "Loaded" = is_installed,
   "R-Package" = names(is_installed)),
-  right = FALSE, row.names = FALSE)
+  right = FALSE, row.names = FALSE
+)
 
 q()
 

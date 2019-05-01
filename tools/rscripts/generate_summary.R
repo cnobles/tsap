@@ -110,18 +110,30 @@ getGenome <- function(ref){
 }
 
 cntSym <- function(cigar, sym, max.only = FALSE){
+  
   match_sym <- paste0("[0-9]+", sym)
   ex_mat <- stringr::str_extract_all(cigar, match_sym, simplify = TRUE)
-  ex_mat <- as.numeric(gsub(sym, "", ifelse(nchar(ex_mat) == 0, 0, ex_mat)))
-  ex_mat <- matrix(ex_mat, nrow = length(cigar))
-  if(ncol(ex_mat) == 0) ex_mat <- matrix(rep(0, length(cigar)), ncol = 1)
   
-  if(max.only){
+  ex_mat <- as.numeric(
+    gsub(sym, "", IRanges::ifelse2(nchar(ex_mat) == 0, 0, ex_mat))
+  )
+  
+  ex_mat <- matrix(ex_mat, nrow = length(cigar))
+  
+  if( ncol(ex_mat) == 0 ) ex_mat <- matrix(rep(0, length(cigar)), ncol = 1)
+  
+  if( max.only ){
+    
     return(ex_mat[
-      matrix(c(seq_len(nrow(ex_mat)), max.col(ex_mat, "first")), ncol = 2)])
+      matrix(c(seq_len(nrow(ex_mat)), max.col(ex_mat, "first")), ncol = 2)
+    ])
+    
   }else{
+    
     return(rowSums(ex_mat, na.rm = TRUE))
+    
   }
+  
 }
 
 getFlankingSeqs <- function(posid, ref, flk = 30){
@@ -193,7 +205,7 @@ cigarRanges <- function(rname, cigar, pos, sym, seq.info){
   insert_log <- comp_sym == "I"
   insert_val <- comp_val[insert_log]
   insert_sym <- comp_sym[insert_log]
-  mdi_val <- ifelse(!insert_log, comp_val, 0)
+  mdi_val <- IRanges::ifelse2(!insert_log, comp_val, 0)
   
   # Calculate starts and ends
   sum_val <- cumsum(mdi_val) + pos - 1
@@ -202,7 +214,7 @@ cigarRanges <- function(rname, cigar, pos, sym, seq.info){
     0, mdi_start@unlistData[seq_len(length(mdi_start@unlistData)-1)] + 1)
   mdi_start@unlistData[start(mdi_start@partitioning)] <- pos
   mdi_end <- sum_val
-  mdi_end <- ifelse(insert_log, mdi_end + 1, mdi_end)
+  mdi_end <- IRanges::ifelse2(insert_log, mdi_end + 1, mdi_end)
   
   # Construct GRanges for M and D
   gr_md <- GenomicRanges::GRanges(
@@ -239,7 +251,7 @@ cigarRanges <- function(rname, cigar, pos, sym, seq.info){
 }
 
 pNums <- function(x, round = 3, digits = 3, big.mark = ",", ...){
-  x <- ifelse(is.na(x), 0, x)
+  x <- IRanges::ifelse2(is.na(x), 0, x)
   if(x >= 100){
     return(format(x, big.mark = big.mark, ...))
   }else{

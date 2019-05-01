@@ -8,6 +8,7 @@ import re
 import yaml
 import configparser
 from tools.pytools.defs import *
+from pathlib import Path
 
 if not config:
     raise SystemExit(
@@ -29,6 +30,7 @@ sampleInfo = import_sample_info(
 SAMPLES=sampleInfo[config["Sample_Name_Column"]]
 TYPES=config["Read_Types"]
 READS=config["Genomic_Reads"]
+PANEL=str(".").join(str(Path(config["Panel_Path"]).name).split(".")[:-1])
 
 wildcard_constraints:
     samples=SAMPLES

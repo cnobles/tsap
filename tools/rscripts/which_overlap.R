@@ -95,7 +95,7 @@ cigarRanges <- function(rname, cigar, pos, sym, seq.info){
   insert_log <- comp_sym == "I"
   insert_val <- comp_val[insert_log]
   insert_sym <- comp_sym[insert_log]
-  mdi_val <- ifelse(!insert_log, comp_val, 0)
+  mdi_val <- IRanges::ifelse2(!insert_log, comp_val, 0)
   
   # Calculate starts and ends
   sum_val <- cumsum(mdi_val)
@@ -104,7 +104,7 @@ cigarRanges <- function(rname, cigar, pos, sym, seq.info){
     0, mdi_start@unlistData[seq_len(length(mdi_start@unlistData)-1)] + 1)
   mdi_start@unlistData[start(mdi_start@partitioning)] <- pos
   mdi_end <- sum_val + pos - 1
-  mdi_end <- ifelse(insert_log, mdi_end + 1, mdi_end)
+  mdi_end <- IRanges::ifelse2(insert_log, mdi_end + 1, mdi_end)
   
   # Construct GRanges for M and D
   gr_md <- GenomicRanges::GRanges(

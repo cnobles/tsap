@@ -18,7 +18,7 @@ rule demultiplex:
     unas=temp(expand(
       RUN_DIR + "/processData/unassigned.{type}.fastq.gz", type=TYPES))
   params:
-    tool=ROOT_DIR + "/tools/dualDemultiplexR/dualDemultiplex.R",
+    tool=ROOT_DIR + "/tools/rscripts/demulti.R",
     bc1Len=config["barcode1Length"],
     bc2Len=config["barcode2Length"],
     bc1=config["barcode1"],
@@ -33,7 +33,7 @@ rule demultiplex:
     """
     Rscript {params.tool} -m {ROOT_DIR}/{input.sampleInfo} \
       --read1 {input.R1} --read2 {input.R2} \
-      --index1 {input.I1} --index2 {input.I2} \
+      --idx1 {input.I1} --idx2 {input.I2} \
       --barcode1 {params.bc1} --barcode1Length {params.bc1Len} \
       --barcode2 {params.bc2} --barcode2Length {params.bc2Len} \
       --bc1Mismatch {params.bc1Mis} --bc2Mismatch {params.bc2Mis} \
