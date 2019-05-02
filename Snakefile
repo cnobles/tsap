@@ -7,8 +7,9 @@ import sys
 import re
 import yaml
 import configparser
-from tools.pytools.defs import *
 from pathlib import Path
+from vivilib import import_sample_info, choose_sequence_data
+
 
 if not config:
     raise SystemExit(
@@ -37,8 +38,14 @@ wildcard_constraints:
 
 # Working paths
 RUN = config["Run_Name"]
-ROOT_DIR = config["Install_Directory"]
-RUN_DIR = config["Install_Directory"] + "/analysis/" + RUN
+ROOT_DIR = ""
+try:
+    ROOT_DIR = os.environ["VIVI_DIR"]
+except KeyError:
+    raise SystemExit(
+        "VIVI_DIR environment variable not defined. Are you sure you "
+        "activated the vivi conda environment?")
+RUN_DIR = ROOT_DIR + "/analysis/" + RUN
 
 # Check for directory paths.
 if not os.path.isdir(ROOT_DIR):
@@ -54,9 +61,6 @@ elif (config["format"] == "html"):
 # Target Rules
 rule all:
     input: report_output
-
-# Architecture Rules
-include: "rules/arch.rules"
 
 # Processing Rules
 include: "rules/demulti.rules"

@@ -1,0 +1,218 @@
+# On-target analysis
+
+Table 3 tabulates the read counts associated with each on-target site and the associated proportion for Uncharacterized (Unchar.), Complete (unedited), Insertion, and Deletion containing reads. Read counts are in **bold**, while proportions are in plain text and between 0 and 1.
+
+```{r on_tar_summary_tbl}
+on_tar_summary_print <- on_tar_summary_tbl %>%
+  dplyr::group_by(specimen, rname) %>%
+  dplyr::mutate(
+    "Reads" = pNums(total.cnt, digits = 0),
+    "Unchar." = pNums(unc.freq),
+    "Complete" = pNums(com.freq),
+    "Insertion" = pNums(in.freq),
+    "Deletion" = pNums(del.freq)
+  ) %>%
+  dplyr::ungroup() %>%
+  dplyr::select(
+    specimen, rname, Reads, Unchar., Complete, Insertion, Deletion
+  ) %>%
+  tidyr::gather(Type, val, -specimen, -rname) %>%
+  tidyr::spread(rname, val, fill = "-") %>%
+  dplyr::mutate(
+    specimen = factor(
+      specimen, 
+      levels = unique(stringr::str_extract(sample_info$sampleName, "[\\w]+"))
+    ),
+    Type = factor(
+      Type , 
+      levels = c("Reads", "Unchar.", "Complete", "Insertion", "Deletion")
+    )
+  ) %>%
+  dplyr::arrange(specimen, Type) %>%
+  dplyr::rename("Specimen" = specimen)
+
+if( args$tables ){
+  
+  on_tar_summary_print %>%
+    write.csv(
+      file = file.path(tables_path, "tbl3.on_target_editing.csv"),
+      quote = TRUE, row.names = FALSE
+    )
+  
+}
+
+kable(
+    x = on_tar_summary_print[,-1], format = report_format, row.names = FALSE,
+    booktabs = TRUE, longtable = TRUE, escape = FALSE, caption = tbl_caps[3],
+    format.args = list(big.mark = ",")
+  ) %>%
+  kableExtra::kable_styling(
+    bootstrap_options = bootstrap_options,
+    latex_options = latex_options
+  ) %>%
+  kableExtra::group_rows(
+    index = table(paste0("Specimen: ", on_tar_summary_print$Specimen))
+  ) %>%
+  kableExtra::row_spec(grep("Reads", on_tar_summary_print$Type), bold = TRUE)
+
+```
+
+```{r} 
+if(args$format == "pdf"){
+  cat("\\newpage")
+}else{
+  cat('<P style="page-break-before: always">')
+}
+```
+
+Similar to Table 3, Figure 1 displays the proportion of reads edited from each on-target edit site and for each sample. Classes of reads are the same as previously described.
+
+```{r on_tar_graphic, fig.width=7.5, fig.height=3.5}
+on_tar_plot_data <- on_tar_summary_tbl %>%
+  dplyr::select(-total.cnt) %>%
+  tidyr::gather(key = type, value = freq, -specimen, -rname) %>%
+  dplyr::mutate(
+    rname = factor(
+      rname, levels = panel_targets$target[panel_targets$edit == "on"]
+    ),
+    specimen = factor(
+      specimen, levels = unique(str_extract(sample_info$sampleName, "[\\w]+"))
+    ),
+    type = factor(
+      type, levels = c("unc.freq", "com.freq", "in.freq", "del.freq")
+    )
+  ) %>%
+  dplyr::arrange(desc(type))
+
+levels(on_tar_plot_data$type) <- c(
+  "Unchar.", "Complete", "Insertion", "Deletion"
+)
+
+on_tar_graphic <- ggplot(
+    on_tar_plot_data, aes(x = rname, y = freq, group = specimen)
+  ) + 
+  geom_bar(stat = "identity", aes(fill = type)) + 
+  facet_wrap(~ specimen, nrow = 1) +
+  scale_fill_brewer(type = "qual", palette = "Paired") +
+  labs(x = NULL, y = "Frequency", fill = NULL) +
+  custom_theme + 
+  theme(
+    legend.position = "bottom",
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+
+ggsave(
+  filename = "on_target_editing.pdf", 
+  plot = on_tar_graphic, 
+  device = "pdf", 
+  path = figure_path, 
+  width = figure_width, 
+  height = 3.5, 
+  units = "in"
+)
+
+ggsave(
+  filename = "on_target_editing.png", 
+  plot = on_tar_graphic, 
+  device = "png", 
+  path = figure_path, 
+  width = figure_width,
+  height = 3.5, 
+  units = "in",
+  dpi = knitr::opts_chunk$get("dpi")
+)
+
+
+if( args$format == "pdf"){
+  
+  knitr::include_graphics(
+    path = file.path(figure_path, "on_target_editing.pdf")
+  )
+  
+}else{
+  
+  knitr::include_graphics(
+    path = file.path(figure_path, "on_target_editing.png")
+  )
+  
+}
+
+```
+
+```{r} 
+cat(fig_caps[1]) 
+```
+
+Indel profiles, or the distribution of deleted DNA around the target site, are show in Figure 2 for reads containing deletions at the target sites. The height of the data is associated with the number of reads observed containing the respective position. Deletion profiles have been separated based on specimens and target site.
+
+```{r on_tar_del_profile, fig.width=7.5, fig.height=2.15}
+on_del_profile <- edit_grl$D[edit_grl$D$edit == "on"]
+
+on_del_profile <- on_del_profile[
+  rep(seq_along(on_del_profile), on_del_profile$count)
+]
+
+on_del_profile$count <- NULL
+
+on_del_profile <- split(on_del_profile, on_del_profile$specimen)
+
+null <- lapply(seq_along(on_del_profile), function(i, target, totals, fp){
+  
+    p <- plot_indel_cov(on_del_profile[[i]], target, totals = totals) + 
+      custom_theme
+    
+    file_pdf <- sprintf("on_target_del_profile-%s.pdf", i)
+    file_png <- sprintf("on_target_del_profile-%s.png", i)
+      
+    ggsave(
+      filename = file_pdf, 
+      plot = p, 
+      device = "pdf", 
+      path = fp, 
+      width = figure_width, 
+      height = 2.15, 
+      units = "in"
+    )
+    
+    ggsave(
+      filename = file_png, 
+      plot = p, 
+      device = "png", 
+      path = fp, 
+      width = figure_width,
+      height = 2.15, 
+      units = "in",
+      dpi = knitr::opts_chunk$get("dpi")
+    )
+    
+  },
+  target = norm_targets,
+  totals = total_specimen_counts,
+  fp = figure_path
+)
+
+if( args$format == "pdf"){
+  
+  knitr::include_graphics(
+    path = sprintf(
+      file.path(figure_path, "on_target_del_profile-%s.pdf"), 
+      seq_along(on_del_profile)
+    )
+  )
+  
+}else{
+  
+  knitr::include_graphics(
+    path = sprintf(
+      file.path(figure_path, "on_target_del_profile-%s.png"), 
+      seq_along(on_del_profile)
+    )
+  )
+  
+}
+
+```
+
+```{r} 
+cat(fig_caps[2]) 
+```

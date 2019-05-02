@@ -1,12 +1,13 @@
 # Run configuration
 Run_Name : "default"
+Desc_Name : "Descriptive Name of Project (Please change)"
 Sample_Info : "sampleInfo/default.sampleInfo.csv"
 Supplemental_Info : "sampleInfo/default.supp.csv"
-Panel : "panel.init"
+Panel_Path : "panel.init"
 RefGenome : "hg38"
-RefGenomePath : "genomes/hg38.2bit"
 
 # Sequence files
+Seq_Path: "analysis/default/input_data/"
 R1: "Undetermined_S0_L001_R1_001.fastq.gz"
 R2: "Undetermined_S0_L001_R2_001.fastq.gz"
 I1: "Undetermined_S0_L001_I1_001.fastq.gz"
@@ -24,7 +25,6 @@ R2_Overreading_Trim : "AGATCGGAAGAGCGTCGTGT"
 
 # ------------------------------------------------------------------------------
 # Vivi configuration
-Install_Directory : "/home/nobles/vivi"
 Read_Types : ["R1", "R2", "I1", "I2"]
 Genomic_Reads : ["R1", "R2"]
 
@@ -52,3 +52,20 @@ pearParams : "-p 1.0 -n 30"
 
 # Reference Alignment
 BWAparams : "-k 30 -w 150"
+
+# Post-Alignment Processing
+maxDistFromEdit : 20
+
+# Summary Report Options
+format : "pdf"
+figures : FALSE
+reportData : FALSE
+suppFile : FALSE
+discussion :
+    include : FALSE
+    path : "."
+methods : FALSE
+signature : 
+    include : FALSE
+    positions :
+        analyst : ["Bioinformatic Analyst", "Christopher Nobles, Ph.D."]

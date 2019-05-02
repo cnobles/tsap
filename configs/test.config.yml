@@ -7,6 +7,7 @@ Panel_Path : "panels/panel.test.csv"
 RefGenome : "hg38"
 
 # Sequence files
+Seq_Path: "analysis/test/input_data/"
 R1: "test.R1.fastq.gz"
 R2: "test.R2.fastq.gz"
 I1: "test.I1.fastq.gz"
@@ -24,7 +25,6 @@ R2_Overreading_Trim : "AGATCGGAAGAGCGTCGTGT"
 
 # ------------------------------------------------------------------------------
 # Vivi configuration
-Install_Directory : "/home/nobles/dev/projects/vivi"
 Read_Types : ["R1", "R2", "I1", "I2"]
 Genomic_Reads : ["R1", "R2"]
 
@@ -57,7 +57,15 @@ BWAparams : "-k 30 -w 150"
 maxDistFromEdit : 20
 
 # Summary Report Options
-format : "html"
+format : "pdf"
 figures : FALSE
 reportData : FALSE
 suppFile : FALSE
+discussion :
+    include : FALSE
+    path : "."
+methods : FALSE
+signature : 
+    include : FALSE
+    positions :
+        analyst : ["Bioinformatic Analyst", "Christopher Nobles, Ph.D."]

@@ -1,0 +1,256 @@
+---
+title: |
+    | Targeted Sequencing Summary Report: 
+    | `r config$Desc_Name`
+date: |
+    | report generated : `r Sys.Date()`
+    | software version : `r soft_version`
+    | environment build : `r build_version`
+output: 
+  html_document:
+    toc: true
+    toc_depth: 2
+    toc_float: 
+      collapsed: false
+    number_sections: false
+    fig_caption: true
+    theme: cerulean 
+    highlight: tango
+    smart: false
+  pdf_document:
+    toc: true
+    toc_depth: 2
+    number_sections: false
+    fig_caption: true
+header-includes: 
+  - \usepackage{float}
+  - \usepackage{indentfirst}
+  - \usepackage{booktabs}
+  - \usepackage{longtable}
+  - \usepackage{gensymb}
+  - \setlength{\defaultaddspace}{0em}
+  - \setlength{\parindent}{2em}
+fontsize: 11pt
+geometry: margin=0.6in
+---
+
+```{r setup, include=FALSE}
+packs <- c(
+  "magrittr", "data.table", "Biostrings", "GenomicRanges",
+  "knitr", "kableExtra", "scales", "RColorBrewer", "tidyverse"
+)
+
+packs_loaded <- suppressMessages(sapply(packs, require, character.only = TRUE))
+if(!all(packs_loaded)){
+  print(data.frame(
+    "R-Packages" = names(packs_loaded), 
+    "Loaded" = packs_loaded, 
+    row.names = NULL), row.names = FALSE)
+  stop("Check dependancies.")
+}
+
+options(
+  stringsAsFactors = FALSE, 
+  scipen = 99, 
+  knitr.table.format = "latex"
+)
+
+knitr::opts_chunk$set(
+  echo = FALSE,
+  comment = "",
+  warning = FALSE,
+  error = TRUE,
+  message = FALSE,
+  cache = FALSE,
+  results = "asis",
+  fig.align = "center",
+  dpi = 300,
+  dev = c("png", "pdf"),
+  fig.pos = "H",
+  fig.width = 7
+)
+
+if(args$figures != FALSE){
+  knitr::opts_chunk$set(
+    fig.path = file.path(
+      output_dir, gsub("[\\w]+$", "figures/", output_file, perl = TRUE)))
+}
+
+# Custom theme
+custom_theme <- theme_bw() +
+  theme(
+    panel.background = element_rect(color = "white", fill = "white"),
+    panel.border = element_rect(color = "white"),
+    panel.grid.major = element_line(color = "white"),
+    panel.grid.minor = element_line(color = "white"),
+    strip.background = element_rect(color = "black", fill = "white"),
+    strip.text = element_text(face = "bold"),
+    legend.key = element_rect(fill = "white"),
+    title = element_text(face = "bold", size = 9),
+    axis.ticks = element_line(color = "black"),
+    axis.text = element_text(color = "black"),
+    axis.text.x = element_text(face = "bold", angle = 0),
+    axis.title = element_text(color = "black", face = "bold", size = 9),
+    axis.line = element_line(color = "black"),
+    axis.line.x = element_line(color = "black"),
+    axis.line.y = element_line(color = "black")
+  )
+
+report_format <- ifelse(args$format == "pdf", "latex", "html")
+figure_width <- 7.5
+bootstrap_options <- c("striped", "hover")
+latex_options <- c("hold_position", "repeat_header")
+
+# Captions
+tbl_caps <- c(
+  "Specimen metadata.",
+  "Specimen summary.",
+  "On-target editing read counts and proportions.",
+  "Off-target editing read counts and proportions.",
+  "Control target editing read counts and proportions.")
+
+fig_caps <- c(
+  "Proportional on-target editing.",
+  "On-target deletion profile.",
+  "Proportional off-target editing.",
+  "Off-target deletion profile.",
+  "Proportional null or control target editing.",
+  "Control target deletion profile."
+)
+
+if(args$format == "html"){
+  tbl_caps <- paste0("Table ", 1:5, ". ", tbl_caps)
+}
+
+fig_caps <- paste0("Figure ", 1:6, ". ", fig_caps)
+
+shrt_tbl <- distinct(input_uniq, specimen, edit)
+```
+
+***
+
+# Summary
+
+Targeted amplicon sequencing was conducted on specimens to validate nuclease editing at on- and off-target genomic loci. Genomic DNA was amplified with pairs of primers flanking `r unname(table(panel_targets$edit)["on"])` on-target(s), `r unname(table(panel_targets$edit)["off"])` off-target(s), and `r unname(table(panel_targets$edit)["null"])` control target(s) sites. Amplified product were then sequenced on an Illumina instrument and analyzed using custom-designed software. In this report, results for on-, off-, and control sites are found in different sections, which all include the proportion of complete (unedited) amplicons, as well as insertion and deletion containing amplicons.
+
+```{r} 
+if(args$format == "pdf"){
+  cat("\\newpage")
+}else{
+  cat('<P style="page-break-before: always">')
+}
+```
+
+# Specimen overview
+
+Editing conditions related for each specimen are found in Table 1. 
+
+```{r spec_supp, eval=!is.null(config$Supplemental_Info)}
+if( args$tables ){
+  
+  supp_info %>%
+    write.csv(
+      file = file.path(tables_path, "tbl1.supplemental_info.csv"),
+      quote = TRUE, row.names = FALSE
+    )
+  
+}
+
+kable(
+    x = supp_info, format = report_format, row.names = FALSE,
+    booktabs = TRUE, longtable = TRUE, escape = FALSE, caption = tbl_caps[1],
+    format.args = list(big.mark = ",")
+  ) %>%
+  kableExtra::kable_styling(
+    bootstrap_options = bootstrap_options,
+    latex_options = latex_options
+  )
+
+```
+
+Total read counts corresponding to on-, off-, and control target sites can be found in Table 2. The replicate counts for each specimen indicate the number of technical replicates that were performed. InDel (or insertion / deletion) associated reads indicate the number of edited reads observed across all sites. On-, Off-, and Control target site read counts indicate the number of reads associated with each type of target site (including both complete or unedited reads and indel containing reads).
+
+```{r spec_summary}
+if( args$tables ){
+  
+  summary_tbl %>%
+    write.csv(
+      file = file.path(tables_path, "tbl2.read_count_summary.csv"),
+      quote = TRUE, row.names = FALSE
+    )
+  
+}
+
+col_format <- stringr::str_split(colnames(summary_tbl), "\n ", simplify = TRUE)
+
+colnames(summary_tbl) <- col_format[,2]
+
+kable(
+    x = summary_tbl, format = report_format, row.names = FALSE,
+    booktabs = TRUE, longtable = TRUE, escape = FALSE, caption = tbl_caps[2],
+    format.args = list(big.mark = ",")
+  ) %>%
+  kableExtra::kable_styling(
+    bootstrap_options = bootstrap_options,
+    latex_options = latex_options
+  ) %>%
+  kableExtra::add_header_above(header = col_format[,1])
+```
+
+```{r} 
+if(args$format == "pdf"){
+  cat("\\newpage")
+}else{
+  cat('<P style="page-break-before: always">')
+}
+```
+
+```{r on_target_analysis, eval=any(input_uniq$edit == "on"), child=file.path(root_dir, "tools/rscripts/report_templates/on_target_template.Rmd")}
+```
+
+```{r} 
+if(args$format == "pdf"){
+  cat("\\newpage")
+}else{
+  cat('<P style="page-break-before: always">')
+}
+```
+
+```{r off_target_analysis, eval=any(input_uniq$edit == "off"), child=file.path(root_dir, "tools/rscripts/report_templates/off_target_template.Rmd")}
+```
+
+```{r} 
+if(args$format == "pdf"){
+  cat("\\newpage")
+}else{
+  cat('<P style="page-break-before: always">')
+}
+```
+
+```{r null_target_analysis, eval=any(input_uniq$edit == "null"), child=file.path(root_dir, "tools/rscripts/report_templates/null_target_template.Rmd")}
+```
+
+```{r} 
+if(args$format == "pdf"){
+  cat("\\newpage")
+}else{
+  cat('<P style="page-break-before: always">')
+}
+```
+
+```{r discussion, eval=config$discussion$include, child=file.path(root_dir, config$discussion$path)}
+```
+
+```{r} 
+if(args$format == "pdf"){
+  cat("\\newpage")
+}else{
+  cat('<P style="page-break-before: always">')
+}
+```
+
+```{r methods, eval=config$methods, child=file.path(code_dir, "methods.Rmd")}
+```
+
+```{r signature, eval=config$signature$include & config$format == "pdf", child=file.path(code_dir, "report_templates/signature.Rmd")}
+```

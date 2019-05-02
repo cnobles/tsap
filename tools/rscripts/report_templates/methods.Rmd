@@ -21,18 +21,23 @@ Sequences were analyzed using a custom pipeline developed by the laboratory of F
 ## Tables of nucleic acids
 
 ```{r loci_tbl}
-panel <- read.csv(file.path(config$Install_Directory, config$Panel_Path), header = TRUE)
+panel <- read.csv(
+  file.path(root_dir, config$Panel_Path), header = TRUE
+)
 panel$locus <- gsub(";", "\n", panel$locus)
 panel$edit <- gsub("null", "control", panel$edit)
 names(panel) <- c("Target", "Locus", "Type", "Fwd Primer", "Rev Primer")
 panel <- panel %>%
-  gather(Primer, Sequence, -Target, -Locus, -Type) %>%
-  mutate(
+  tidyr::gather(Primer, Sequence, -Target, -Locus, -Type) %>%
+  dplyr::mutate(
     Primer = gsub(" Primer", "", Primer),
-    Sequence = split_char(Sequence, 36, "-\n"))
+    Sequence = split_char(Sequence, 36, "-\n")
+  )
 
 pandoc.table(
   panel, style = "multiline", keep.line.breaks = TRUE, split.cells = 5,
   emphasize.verbatim.cols = 5, justify = 'ccccl',
-  caption = "Loci specific primer pairs used in PCR 1.")
+  caption = "Loci specific primer pairs used in PCR 1."
+)
+
 ```
