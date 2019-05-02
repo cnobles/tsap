@@ -576,11 +576,11 @@ plot_indel_cov <- function(gr, target, totals, min_dist = 50L){
     ) +
     scale_y_continuous(breaks = c(0, 1), labels = c(1, 0)) +
     facet_wrap(
-      ~ rname, ncol = nrow(target), scales = "free", drop = TRUE
+      ~ rname, ncol = nrow(target), nrow = 1, scales = "free", drop = TRUE
     ) +
     labs(
       x = "Edit Position", 
-      y = "Percent Edited", 
+      y = "Proportion Edited", 
       title = paste0("Specimen: ", unique(gr$specimen))
     )
   

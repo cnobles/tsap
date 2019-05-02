@@ -57,14 +57,6 @@ kable(
 
 ```
 
-```{r} 
-if(args$format == "pdf"){
-  cat("\\newpage")
-}else{
-  cat('<P style="page-break-before: always">')
-}
-```
-
 Similar to Table 3, Figure 1 displays the proportion of reads edited from each on-target edit site and for each sample. Classes of reads are the same as previously described.
 
 ```{r on_tar_graphic, fig.width=7.5, fig.height=3.5}

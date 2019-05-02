@@ -56,14 +56,6 @@ kable(
 
 ```
 
-```{r} 
-if(args$format == "pdf"){
-  cat("\\newpage")
-}else{
-  cat('<P style="page-break-before: always">')
-}
-```
-
 In a similar fashion to Figures 1 and 2, Figures 3 and 4 display the frequency of different types of reads across samples and off-target sites and the distribution of deleted sequences at the off target sites.
 
 ```{r off_tar_graphic, fig.width=7.5, fig.height=3.5}

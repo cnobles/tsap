@@ -57,14 +57,6 @@ kable(
 
 ```
 
-```{r} 
-if(args$format == "pdf"){
-  cat("\\newpage")
-}else{
-  cat('<P style="page-break-before: always">')
-}
-```
-
 ```{r null_tar_graphic, fig.width=7.5, fig.height=3.5}
 null_tar_plot_data <- null_tar_summary_tbl %>%
   dplyr::select(-total.cnt) %>%
@@ -140,7 +132,7 @@ if( args$format == "pdf"){
 cat(fig_caps[5]) 
 ```
 
-```{r null_tar_del_profile, eval=FALSE, fig.width=7.5, fig.height=2.15}
+```{r null_tar_del_profile, fig.width=7.5, fig.height=2.15}
 null_del_profile <- edit_grl$D[edit_grl$D$edit == "null"]
 
 null_del_profile <- null_del_profile[

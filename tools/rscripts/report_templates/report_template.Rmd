@@ -249,7 +249,7 @@ if(args$format == "pdf"){
 }
 ```
 
-```{r methods, eval=config$methods, child=file.path(code_dir, "methods.Rmd")}
+```{r methods, eval=config$methods, child=file.path(code_dir, "report_templates/methods.Rmd")}
 ```
 
 ```{r signature, eval=config$signature$include & config$format == "pdf", child=file.path(code_dir, "report_templates/signature.Rmd")}
