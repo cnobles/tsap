@@ -1,4 +1,4 @@
-#' Script to generate summary report for VIVI analysis
+#' Script to generate summary report for TsAP analysis
 #' Required packages:
 
 # Initial options and packages -------------------------------------------------

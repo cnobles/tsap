@@ -46,3 +46,9 @@ tools/dualDemultiplexR
 tools/seqFiltR
 tools/seqConsolidateR
 tools/seqTrimR
+
+# Config files
+*.yml
+
+# Panel files
+*.csv

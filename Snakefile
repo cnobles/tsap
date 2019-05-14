@@ -1,4 +1,4 @@
-# Vivi : Validation of in vivo Loci through targeted sequencing of genomic DNA.
+# TsAP : Targeted sequencing Analysis Pipeline.
 #
 # Author : Christopher Nobles, Ph.D.
 
@@ -8,7 +8,7 @@ import re
 import yaml
 import configparser
 from pathlib import Path
-from vivilib import import_sample_info, choose_sequence_data
+from tsaplib import import_sample_info, choose_sequence_data
 
 
 if not config:
@@ -40,16 +40,16 @@ wildcard_constraints:
 RUN = config["Run_Name"]
 ROOT_DIR = ""
 try:
-    ROOT_DIR = os.environ["VIVI_DIR"]
+    ROOT_DIR = os.environ["TSAP_DIR"]
 except KeyError:
     raise SystemExit(
-        "VIVI_DIR environment variable not defined. Are you sure you "
-        "activated the vivi conda environment?")
+        "TSAP_DIR environment variable not defined. Are you sure you "
+        "activated the tsap conda environment?")
 RUN_DIR = ROOT_DIR + "/analysis/" + RUN
 
 # Check for directory paths.
 if not os.path.isdir(ROOT_DIR):
-    raise SystemExit("Path to vivi is not found. Check configuration file.")
+    raise SystemExit("Path to tsap is not found. Check configuration file.")
 
 # Summary Report File
 report_output = RUN_DIR + "/reports/report." + RUN

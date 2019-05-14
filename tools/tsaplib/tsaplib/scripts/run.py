@@ -7,19 +7,19 @@ from ruamel.yaml import YAML
 from pathlib import Path
 
 def main( argv = sys.argv ):
-    """Initiate an VivI project run in Snakemake."""
+    """Initiate an TsAP project run in Snakemake."""
 
     try:
         conda_prefix = os.environ.get("CONDA_PREFIX")
     except (KeyError, IndexError):
         raise SystemExit(
-            "Could not determine Conda prefix. Activate your VivI "
+            "Could not determine Conda prefix. Activate your TsAP "
             "environment and try this command again.")
 
-    usage_str = "\n  vivi %(prog)s <path/to/config.file> <options> -- <snakemake.options>"
+    usage_str = "\n  tsap %(prog)s <path/to/config.file> <options> -- <snakemake.options>"
 
     description_str = (
-        "Initiate the processing of an VivI project givin a configuration "
+        "Initiate the processing of an TsAP project givin a configuration "
         "file. Arguments after '--' are passed to Snakemake asis.")
     
     parser = argparse.ArgumentParser(
@@ -35,25 +35,25 @@ def main( argv = sys.argv ):
     )
 
     parser.add_argument(
-        "-i", "--vivi_dir", 
-        default = os.getenv("VIVI_DIR", os.getcwd()),
-        help = "Path to VivI installation."
+        "-i", "--tsap_dir", 
+        default = os.getenv("TSAP_DIR", os.getcwd()),
+        help = "Path to TsAP installation."
     )
 
     # The remaining args (after --) are passed to Snakemake
     args, remaining = parser.parse_known_args(argv)
 
-    snakefile = Path(args.vivi_dir)/"Snakefile"
+    snakefile = Path(args.tsap_dir)/"Snakefile"
     if not snakefile.exists():
         sys.stderr.write(
             "Error: could not find a Snakefile in directory '{}'\n".format(
-                args.vivi_dir))
+                args.tsap_dir))
         sys.exit(1)
 
     snakemake_args = ['snakemake',
                       '--snakefile', str(snakefile),
                       '--configfile', str(args.config),
-                      '--dir', str(args.vivi_dir)] + remaining
+                      '--dir', str(args.tsap_dir)] + remaining
     #print("Running: "+" ".join(snakemake_args))
 
     cmd = subprocess.run(snakemake_args)

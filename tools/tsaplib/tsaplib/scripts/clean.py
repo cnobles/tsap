@@ -8,19 +8,19 @@ from pathlib import Path
 from shutil import rmtree
 
 def main( argv = sys.argv ):
-    """Clean an VivI project directory by keeping only terminal files."""
+    """Clean an TsAP project directory by keeping only terminal files."""
 
     try:
         conda_prefix = os.environ.get("CONDA_PREFIX")
     except (KeyError, IndexError):
         raise SystemExit(
-            "Could not determine Conda prefix. Activate your VivI "
+            "Could not determine Conda prefix. Activate your TsAP "
             "environment and try this command again.")
 
-    usage_str = "\n  vivi %(prog)s <path/to/config.file> <options>"
+    usage_str = "\n  tsap %(prog)s <path/to/config.file> <options>"
 
     description_str = (
-        "Clean an VivI project givin a configuration file. This command will "
+        "Clean an TsAP project givin a configuration file. This command will "
         "remove all but terminal files from a project directory.")
     
     parser = argparse.ArgumentParser(
@@ -48,29 +48,29 @@ def main( argv = sys.argv ):
     )
 
     parser.add_argument(
-        "-i", "--vivi_dir", 
-        default = os.getenv("VIVI_DIR"),
-        help = "Path to VivI installation."
+        "-i", "--tsap_dir", 
+        default = os.getenv("TSAP_DIR"),
+        help = "Path to TsAP installation."
     )
     
 
     # The remaining args will not be used
     args, remaining = parser.parse_known_args(argv)
     
-    # VivI directory
-    vivi_directory = Path(args.vivi_dir)
+    # TsAP directory
+    tsap_directory = Path(args.tsap_dir)
     
-    if not vivi_directory.exists():
+    if not tsap_directory.exists():
         sys.stderr.write(
-            "Error: could not find VivI directory '{}'\n".format(
-                args.vivi_dir))
+            "Error: could not find TsAP directory '{}'\n".format(
+                args.tsap_dir))
         sys.exit(1)
     
     # Load config yaml file
     yaml = YAML(typ = 'safe')
     config = yaml.load(open(args.config, "r"))
     
-    analysis_directory = vivi_directory / "analysis" / config['Run_Name']
+    analysis_directory = tsap_directory / "analysis" / config['Run_Name']
 
     if not analysis_directory.exists():
         sys.stderr.write(

@@ -2,23 +2,23 @@ from os import getenv, getcwd
 from subprocess import run, PIPE
 from setuptools import setup, find_packages
 
-def get_vivi_version(with_hash = False):
-    vivi_version_path = getenv("VIVI_DIR", getcwd()) + "/.version"
-    vivi_version = open(vivi_version_path, "r").readlines()[0].rstrip()
+def get_tsap_version(with_hash = False):
+    tsap_version_path = getenv("TSAP_DIR", getcwd()) + "/.version"
+    tsap_version = open(tsap_version_path, "r").readlines()[0].rstrip()
     commit_hash = run(
       ["git", "rev-parse", "--short", "HEAD"], stdout=PIPE
       )
     commit_str = commit_hash.stdout.decode('utf-8').rstrip()
     if with_hash:
-        return vivi_version + "+" + commit_str
+        return tsap_version + "+" + commit_str
     else:
-        return vivi_version
+        return tsap_version
 
 setup(
-    name = "vivi",
-    version = get_vivi_version(),
+    name = "tsap",
+    version = get_tsap_version(),
     packages = find_packages(),
     entry_points = { 'console_scripts': [
-        'vivi = vivilib.scripts.command:main'
+        'tsap = tsaplib.scripts.command:main'
     ] }
 )

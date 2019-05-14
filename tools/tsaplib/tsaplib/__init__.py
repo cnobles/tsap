@@ -30,31 +30,31 @@ def choose_sequence_data(config_input, sampleInfo):
         seq = dict(zip(samples, [config_input] * len(samples)))
     return seq
 
-def get_vivi_version(with_hash = False):
-    vivi_path = getenv("VIVI_DIR", None)
+def get_tsap_version(with_hash = False):
+    tsap_path = getenv("TSAP_DIR", None)
 
-    if vivi_path is None:
+    if tsap_path is None:
         raise SystemExit(
-          print("  VIVI_DIR cannot be found as an environmental variable.\n"
-                "  Check to make sure your VivI environment is active,   \n"
+          print("  TSAP_DIR cannot be found as an environmental variable.\n"
+                "  Check to make sure your TsAP environment is active,   \n"
                 "  you may need to restart your environment, update, or    \n"
-                "  reinstall VivI with the install.sh script.")
+                "  reinstall TsAP with the install.sh script.")
         )
     else:
-        vivi_version_path = vivi_path + "/.version"
+        tsap_version_path = tsap_path + "/.version"
 
-    if not path.exists(vivi_version_path):
+    if not path.exists(tsap_version_path):
         raise SystemExit(
-          print("  VivI version cannot be located. Check environmental\n"
-                "  variables, such as VIVI_DIR, otherwise you may want\n"
+          print("  TsAP version cannot be located. Check environmental\n"
+                "  variables, such as TSAP_DIR, otherwise you may want\n"
                 "  to restart your environment, update, or reinstall    \n"
-                "  VivI using the install.sh script.")
+                "  TsAP using the install.sh script.")
         )
 
-    vivi_version = open(vivi_version_path, "r").readlines()[0].rstrip()
+    tsap_version = open(tsap_version_path, "r").readlines()[0].rstrip()
 
     wd = getcwd()
-    chdir(str(vivi_path))
+    chdir(str(tsap_path))
 
     commit_hash = run(
       ["git", "rev-parse", "--short", "HEAD"], stdout=PIPE
@@ -65,8 +65,8 @@ def get_vivi_version(with_hash = False):
     commit_str = commit_hash.stdout.decode('utf-8').rstrip()
 
     if with_hash:
-        return vivi_version + "+" + commit_str
+        return tsap_version + "+" + commit_str
     else:
-        return vivi_version
+        return tsap_version
 
-__version__ = get_vivi_version( with_hash = True )
+__version__ = get_tsap_version( with_hash = True )

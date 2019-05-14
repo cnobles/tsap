@@ -3,10 +3,10 @@
 __conda_url=https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
 
 read -r -d '' __usage <<-'EOF'
-  -e --environment  [arg] Environment to install to. Default: "vivi"
-  -s --vivi_dir   [arg] Location of vivi source code. Default: this directory
+  -e --environment  [arg] Environment to install to. Default: "tsap"
+  -s --tsap_dir   [arg] Location of tsap source code. Default: this directory
   -c --conda  [arg]       Location of Conda installation. Default: ${PREFIX}
-  -u --update [arg]       Update vivi [lib]rary, conda [env], or [all].
+  -u --update [arg]       Update tsap [lib]rary, conda [env], or [all].
   -r --requirements       Install from requirements rather than build (slow).
   -t --test               After installation, run test to check functionality.
   -v --verbose            Show subcommand output
@@ -15,9 +15,9 @@ read -r -d '' __usage <<-'EOF'
 EOF
 
 read -r -d '' __helptext <<-'EOF'
- This script installs or upgrades VivI, including Conda (if not installed).
+ This script installs or upgrades TsAP, including Conda (if not installed).
  To upgrade, pass the '--upgrade all' option, then be sure to update your config
- files using 'vivi config update'.
+ files using 'tsap config update'.
 EOF
 
 
@@ -63,9 +63,9 @@ function installation_error () {
 
 # Set variables
 __conda_path="${arg_c:-${HOME}/miniconda3}"
-__vivi_dir="${arg_s:-$(readlink -f ${__dir})}"
-__vivi_env="${arg_e:-vivi}"
-__run_vivi_tests=false
+__tsap_dir="${arg_s:-$(readlink -f ${__dir})}"
+__tsap_env="${arg_e:-tsap}"
+__run_tsap_tests=false
 __reqs_install=false
 __update_lib=false
 __update_env=false
@@ -76,7 +76,7 @@ __output=${2-/dev/stdout}
 PATH=$PATH:${__conda_path}/bin
 
 if [[ "${arg_t:?}" = "1" ]]; then
-    __run_vivi_tests=true
+    __run_tsap_tests=true
 fi
 
 if [[ "${arg_r:?}" = "1" ]]; then
@@ -107,7 +107,7 @@ function __test_env() {
     if [[ $(__test_conda) = true ]]; then
         $(conda env list \
         | cut -f1 -d' ' \
-        | grep -Fxq $__vivi_env > /dev/null) && \
+        | grep -Fxq $__tsap_env > /dev/null) && \
         echo true || echo false
     else
       	echo false
@@ -115,7 +115,7 @@ function __test_env() {
 }
 
 function __test_r_version () {
-    activate_vivi
+    activate_tsap
 
     local sem_version=$(R --version | grep 'R version' | cut -d ' ' -f 3)
 
@@ -125,31 +125,31 @@ function __test_r_version () {
         echo false
     fi
 
-    deactivate_vivi
+    deactivate_tsap
 }
 
 function __test_r_packages () {
-    activate_vivi
+    activate_tsap
 
-    $(Rscript ${__vivi_dir}/tools/rscripts/check_for_required_packages.R \
+    $(Rscript ${__tsap_dir}/tools/rscripts/check_for_required_packages.R \
         > /dev/null) && echo true || echo false
 
-    deactivate_vivi
+    deactivate_tsap
 }
 
-function __test_vivilib() {
+function __test_tsaplib() {
     if [[ $(__test_env) = true ]]; then
-      	activate_vivi
-      	command -v vivi &> /dev/null && echo true || echo false
-      	deactivate_vivi
+      	activate_tsap
+      	command -v tsap &> /dev/null && echo true || echo false
+      	deactivate_tsap
     else
       	echo false
     fi
 }
 
-function __test_vivi() {
+function __test_tsap() {
     if [[ $(__test_env) = true ]]; then
-      	$(bash ${__vivi_dir}/etc/tests/test.sh ${__vivi_env} &> /dev/null) && \
+      	$(bash ${__tsap_dir}/etc/tests/test.sh ${__tsap_env} &> /dev/null) && \
       	    echo true || echo false
     else
       	echo "fail"
@@ -160,13 +160,13 @@ function __test_bashrc () {
   grep conda.sh ~/.bashrc > /dev/null && echo true || echo false
 }
 
-function activate_vivi () {
+function activate_tsap () {
     set +o nounset
-    conda activate $__vivi_env
+    conda activate $__tsap_env
     set -o nounset
 }
 
-function deactivate_vivi () {
+function deactivate_tsap () {
     set +o nounset
     conda deactivate
     set -o nounset
@@ -193,10 +193,10 @@ function install_conda () {
 function install_environment () {
     if [[ $__reqs_install == "true" ]]; then
         local install_options="--quiet --file etc/requirements.yml"
-        debug_capture conda env update --name=$__vivi_env ${install_options} 2>&1
+        debug_capture conda env update --name=$__tsap_env ${install_options} 2>&1
     else
         local install_options="--quiet --yes --file etc/build.b0.2.0.txt"
-        debug_capture conda create --name=$__vivi_env ${install_options} 2>&1
+        debug_capture conda create --name=$__tsap_env ${install_options} 2>&1
     fi
 
     if [[ $(__test_env) != true ]]; then
@@ -213,43 +213,43 @@ function install_environment () {
 }
 
 function install_env_vars () {
-    activate_vivi
+    activate_tsap
 
-    echo -ne "#/bin/sh\nexport VIVI_DIR=${__vivi_dir}" > \
+    echo -ne "#/bin/sh\nexport TSAP_DIR=${__tsap_dir}" > \
 	      ${CONDA_PREFIX}/etc/conda/activate.d/env_vars.sh
 
     mkdir -p ${CONDA_PREFIX}/etc/conda/deactivate.d/
 
-    echo -ne "#/bin/sh\nunset VIVI_DIR" > \
+    echo -ne "#/bin/sh\nunset TSAP_DIR" > \
 	      ${CONDA_PREFIX}/etc/conda/deactivate.d/env_vars.sh
 
-	  deactivate_vivi
+	  deactivate_tsap
 }
 
-function install_vivilib () {
-    activate_vivi
+function install_tsaplib () {
+    activate_tsap
 
-    debug_capture pip install --upgrade ${__vivi_dir}/tools/vivilib/ 2>&1
+    debug_capture pip install --upgrade ${__tsap_dir}/tools/tsaplib/ 2>&1
 
-    if [[ $(__test_vivilib) != true ]]; then
+    if [[ $(__test_tsaplib) != true ]]; then
       	installation_error "Library installation"
     fi
 
-    deactivate_vivi
+    deactivate_tsap
 }
 
-info "Starting VivI installation..."
+info "Starting TsAP installation..."
 info "    Conda path:  ${__conda_path}"
-info "    VivI src:  ${__vivi_dir}"
-info "    VivI env:  '${__vivi_env}'"
+info "    TsAP src:  ${__tsap_dir}"
+info "    TsAP env:  '${__tsap_env}'"
 
 debug "Components detected:"
 __conda_installed=$(__test_conda)
 debug "    Conda:         ${__conda_installed}"
 __env_exists=$(__test_env)
 debug "    Environment:   ${__env_exists}"
-__vivilib_installed=$(__test_vivilib)
-debug "    Library:       ${__vivilib_installed}"
+__tsaplib_installed=$(__test_tsaplib)
+debug "    Library:       ${__tsaplib_installed}"
 
 __env_changed=false
 
@@ -271,7 +271,7 @@ fi
 # Source conda into shell
 source ${__conda_path}/etc/profile.d/conda.sh
 
-# Create Conda environment for VivI
+# Create Conda environment for TsAP
 if [[ $__env_exists = true && $__update_env = false ]]; then
     info "Specified environment already exists (use '--update env' to update)"
 else
@@ -281,46 +281,46 @@ else
         __build_source="etc/build.b0.2.0.txt"
     fi
 
-    info "Creating VivI environment..."
+    info "Creating TsAP environment..."
     info "    Building from: $__build_source"
     install_environment
     __env_changed=true
-    info "$__vivi_env environment created."
+    info "$__tsap_env environment created."
 fi
 
 
-# Always update the env_vars.sh in the VivI environment
-debug "Updating \$VIVI_DIR variable to point to ${__vivi_dir}"
+# Always update the env_vars.sh in the TsAP environment
+debug "Updating \$TSAP_DIR variable to point to ${__tsap_dir}"
 info "Setting environmental variables..."
 install_env_vars
 
 
-# Install vivilib into environment if changed or requested
+# Install tsaplib into environment if changed or requested
 if [[ $__env_changed = true ]]; then
-    info "Environment installed/updated; (re)installing VivI library..."
-    install_vivilib
-elif [[ $__vivilib_installed = false ]]; then
-    info "Installing VivI library..."
-    install_vivilib
+    info "Environment installed/updated; (re)installing TsAP library..."
+    install_tsaplib
+elif [[ $__tsaplib_installed = false ]]; then
+    info "Installing TsAP library..."
+    install_tsaplib
 elif [[ $__update_lib = true ]]; then
-    info "Updating VivI library..."
-    install_vivilib
+    info "Updating TsAP library..."
+    install_tsaplib
 else
-    info "VivI library already installed (use '--update lib' to update)"
+    info "TsAP library already installed (use '--update lib' to update)"
 fi
 
 
 # Run tests if requested
-if [[ $__run_vivi_tests = true ]]; then
-    info "Running VivI tests...(this may take a few mins)"
-    __vivi_tested=$(__test_vivi)
+if [[ $__run_tsap_tests = true ]]; then
+    info "Running TsAP tests...(this may take a few mins)"
+    __tsap_tested=$(__test_tsap)
     
-    if [[ $__vivi_tested = true ]]; then
-        info "    VivI Tests:  passed"
+    if [[ $__tsap_tested = true ]]; then
+        info "    TsAP Tests:  passed"
     else
-        warning "    VivI Tests:  FAILED"
+        warning "    TsAP Tests:  FAILED"
         warning "    Try running the test outside of the install to confirm."
-        warning "    Just run 'bash etc/tests/test.sh $__vivi_env'."
+        warning "    Just run 'bash etc/tests/test.sh $__tsap_env'."
     fi
 fi
 
@@ -335,7 +335,7 @@ if [[  $(__test_bashrc) = false ]]; then
     warning "   'echo \"# Added to activate conda within shell\" >> ~/.bashrc"
     warning "   'echo \"source ${__conda_path}/etc/profile.d/conda.sh\" >> ~/.bashrc"
     warning "and close and re-open your terminal session to apply."
-    warning "When finished, run 'conda activate ${__vivi_env}' to begin."
+    warning "When finished, run 'conda activate ${__tsap_env}' to begin."
 else
-    info "Done. Run 'conda activate ${__vivi_env}' to begin."
+    info "Done. Run 'conda activate ${__tsap_env}' to begin."
 fi

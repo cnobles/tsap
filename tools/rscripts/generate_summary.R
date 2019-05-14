@@ -1,4 +1,4 @@
-#' Script to generate summary report for VIVI analysis
+#' Script to generate summary report for TsAP analysis
 #' Required packages:
 
 # Initial options and packages -------------------------------------------------
@@ -69,7 +69,7 @@ parser$add_argument(
 )
 
 parser$add_argument(
-  "--install_dir", nargs = 1, type = "character", default = "VIVI_DIR",
+  "--install_dir", nargs = 1, type = "character", default = "TSAP_DIR",
   help = "VivI install directory path, do not change for normal applications."
 )
 

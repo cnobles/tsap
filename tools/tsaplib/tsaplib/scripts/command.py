@@ -2,11 +2,11 @@ import sys
 import argparse
 import subprocess
 
-from vivilib import __version__
-from vivilib.scripts.run import main as Run
-from vivilib.scripts.setup import main as Setup
-#from vivilib.scripts.config import main as Config
-from vivilib.scripts.clean import main as Clean
+from tsaplib import __version__
+from tsaplib.scripts.run import main as Run
+from tsaplib.scripts.setup import main as Setup
+#from tsaplib.scripts.config import main as Config
+from tsaplib.scripts.clean import main as Clean
 
 def main():
 
@@ -15,16 +15,16 @@ def main():
         "list of subcommands:\n\n"
         "  primary:\n"
         "    setup        \tCreate a new project directory using config file.\n"
-        "    run          \tExecute the VivI pipeline.\n\n"
+        "    run          \tExecute the TsAP pipeline.\n\n"
         "  accessory:\n"
         "    clean        \tCleanup project directory to reduce size. Keeps terminal files.\n\n"
     ).format(version=__version__)
 
     parser = argparse.ArgumentParser(
-        prog = "vivi",
+        prog = "tsap",
         usage = usage_str,
         description = description_str,
-        epilog = "For more help, see the docs at http://vivi.readthedocs.io.",
+      epilog = "For more help, see the docs at http://tsap.readthedocs.io.",
         formatter_class = argparse.RawDescriptionHelpFormatter,
         add_help = False
     )
