@@ -125,13 +125,22 @@ if(args$format == "html"){
 fig_caps <- paste0("Figure ", 1:6, ". ", fig_caps)
 
 shrt_tbl <- distinct(input_uniq, specimen, edit)
+
+on_target_cnt <- unname(table(panel_targets$edit)["on"])
+off_target_cnt <- unname(table(panel_targets$edit)["off"])
+null_target_cnt <- unname(table(panel_targets$edit)["null"])
+
+on_target_cnt <- ifelse(is.na(on_target_cnt), 0, on_target_cnt)
+off_target_cnt <- ifelse(is.na(off_target_cnt), 0, off_target_cnt)
+null_target_cnt <- ifelse(is.na(null_target_cnt), 0, null_target_cnt)
+
 ```
 
 ***
 
 # Summary
 
-Targeted amplicon sequencing was conducted on specimens to validate nuclease editing at on- and off-target genomic loci. Genomic DNA was amplified with pairs of primers flanking `r unname(table(panel_targets$edit)["on"])` on-target(s), `r unname(table(panel_targets$edit)["off"])` off-target(s), and `r unname(table(panel_targets$edit)["null"])` control target(s) sites. Amplified product were then sequenced on an Illumina instrument and analyzed using custom-designed software. In this report, results for on-, off-, and control sites are found in different sections, which all include the proportion of wild type (unedited) amplicons, as well as insertion and deletion containing amplicons.
+Targeted amplicon sequencing was conducted on specimens to validate nuclease editing at on- and off-target genomic loci. Genomic DNA was amplified with pairs of primers flanking `r on_target_cnt` on-target(s), `r off_target_cnt` off-target(s), and `r null_target_cnt` control target(s) sites. Amplified product were then sequenced on an Illumina instrument and analyzed using custom-designed software. In this report, results for on-, off-, and control sites are found in different sections, which all include the proportion of wild type (unedited) amplicons, as well as insertion and deletion containing amplicons.
 
 ```{r} 
 if(args$format == "pdf"){

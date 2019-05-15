@@ -15,44 +15,84 @@ panderOptions("table.split.table", Inf)
 
 # Argument parser --------------------------------------------------------------
 parser <- ArgumentParser(
-  description = "R-based post alignment analysis focused on identifying indels.")
+  description = "R-based post alignment analysis focused on identifying indels."
+)
+
 parser$add_argument(
   "bamFile", type = "character", 
-  help = "Path to bam file input.")
+  help = "Path to bam file input."
+)
+
 parser$add_argument(
   "-i", "--index", type = "character", 
-  help = "Path to index of bam file input.")
+  help = "Path to index of bam file input."
+)
+
 parser$add_argument(
   "-k", "--key", type = "character", 
-  help = "Path to key file for appending read count data.")
+  help = "Path to key file for appending read count data."
+)
+
 parser$add_argument(
   "-o", "--output", type = "character", 
-  help = "Output path for unique alignments, csv format.")
+  help = "Output path for unique alignments, csv format."
+)
+
 parser$add_argument(
   "-a", "--chimera", type = "character", 
-  help = "Output path for chimeric or translocation alignments.")
+  help = "Output path for chimeric or translocation alignments."
+)
+
 parser$add_argument(
   "-c", "--config", type = "character", 
-  help = "Config file for run.")
+  help = "Config file for run."
+)
+
 parser$add_argument(
   "-r", "--ref", type = "character", 
-  help = "Reference sequences specific to panel.")
+  help = "Reference sequences specific to panel."
+)
+
 parser$add_argument(
   "-t", "--target", type = "character", 
-  help = "Panel target file, csv format.")
+  help = "Panel target file, csv format."
+)
+
+parser$add_argument(
+  "--install_dir", nargs = 1, type = "character", default = "TSAP_DIR",
+  help = "TsAP install directory path, do not change for normal applications."
+)
 
 args <- parser$parse_args(commandArgs(trailingOnly = TRUE))
+
+if( !dir.exists(args$install_dir) ){
+  root_dir <- Sys.getenv(args$install_dir)
+}else{
+  root_dir <- args$install_dir
+}
+
+if( !dir.exists(root_dir) ){
+  stop(paste0("\n  Cannot find install path to TsAP: ", root_dir, ".\n"))
+}else{
+  args$install_dir <- root_dir
+}
 
 input_table <- data.frame(
   "Variable" = names(args), 
   "Value" = sapply(
-    seq_along(args), function(i) paste(args[[i]], collapse = ", ")))
+    seq_along(args), function(i) paste(args[[i]], collapse = ", "))
+)
+
 input_table <- input_table[
   match(
     c("bamFile", "index", "key", "output", "chimera", "config", "ref"), 
-    input_table$Variable),]
+    input_table$Variable),
+]
+
 input_table$Variable <- paste0(format(input_table$Variable), " :")
+
 pander("Post-alignment Processing Inputs\n")
+
 pander(
   data.frame(input_table, row.names = NULL),
   row.names = FALSE, justify = "left")
@@ -78,18 +118,28 @@ getGenome <- function(ref){
 }
 
 cntSym <- function(cigar, sym, max.only = FALSE){
+  
   match_sym <- paste0("[0-9]+", sym)
   ex_mat <- stringr::str_extract_all(cigar, match_sym, simplify = TRUE)
-  ex_mat <- as.numeric(gsub(sym, "", ifelse(nchar(ex_mat) == 0, 0, ex_mat)))
-  ex_mat <- matrix(ex_mat, nrow = length(cigar))
-  if(ncol(ex_mat) == 0) ex_mat <- matrix(rep(0, length(cigar)), ncol = 1)
   
-  if(max.only){
+  ex_mat <- as.numeric(gsub(sym, "", ifelse(nchar(ex_mat) == 0, 0, ex_mat)))
+  
+  ex_mat <- matrix(ex_mat, nrow = length(cigar))
+  
+  if( ncol(ex_mat) == 0 ) ex_mat <- matrix(rep(0, length(cigar)), ncol = 1)
+  
+  if( max.only ){
+    
     return(ex_mat[
-      matrix(c(seq_len(nrow(ex_mat)), max.col(ex_mat, "first")), ncol = 2)])
+      matrix(c(seq_len(nrow(ex_mat)), max.col(ex_mat, "first")), ncol = 2)
+      ])
+    
   }else{
+    
     return(rowSums(ex_mat, na.rm = TRUE))
+    
   }
+  
 }
 
 getFlankingSeqs <- function(posid, ref, flk = 30){
@@ -221,8 +271,7 @@ ref_seqinfo <- GenomeInfoDb::Seqinfo(
 base_gen <- getGenome(config$RefGenome)
 
 ## Panel targets
-panel_targets <- read.csv(
-  file.path(config$Install_Directory, config$Panel_Path))
+panel_targets <- read.csv(file.path(root_dir, config$Panel_Path))
 targets <- structure(panel_targets$locus, names = panel_targets$target)
 norm_targets <- normalizeTargets(
   targets, base_gen, ref_seqs, ref_seqinfo, return = "granges")

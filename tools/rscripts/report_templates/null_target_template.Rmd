@@ -9,8 +9,8 @@ null_tar_summary_print <- null_tar_summary_tbl %>%
     "Reads" = pNums(total.cnt, digits = 0),
     "Unchar." = pNums(unc.freq),
     "WildType" = pNums(com.freq),
-    "Insertion" = pNums(in.freq),
-    "Deletion" = pNums(del.freq)
+    "Insertion" = paste0(pNums(in.freq), " (", pNums(in.oof), ")"),
+    "Deletion" = paste0(pNums(del.freq), " (", pNums(del.oof), ")")
   ) %>%
   dplyr::ungroup() %>%
   dplyr::select(
@@ -59,7 +59,7 @@ kable(
 
 ```{r null_tar_graphic, fig.width=7.5, fig.height=3.5}
 null_tar_plot_data <- null_tar_summary_tbl %>%
-  dplyr::select(-total.cnt) %>%
+  dplyr::select(-total.cnt, -in.oof, -del.oof) %>%
   tidyr::gather(key = type, value = freq, -specimen, -rname) %>%
   dplyr::mutate(
     rname = factor(
@@ -148,8 +148,8 @@ null <- lapply(seq_along(null_indel_profile), function(i, target, totals, fp){
     p <- plot_indel_cov(null_indel_profile[[i]], target, totals = totals) + 
       custom_theme
     
-    file_pdf <- sprintf("null_target_del_profile-%s.pdf", i)
-    file_png <- sprintf("null_target_del_profile-%s.png", i)
+    file_pdf <- sprintf("null_target_indel_profile-%s.pdf", i)
+    file_png <- sprintf("null_target_indel_profile-%s.png", i)
       
     ggsave(
       filename = file_pdf, 

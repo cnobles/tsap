@@ -1,6 +1,6 @@
 # On-target analysis
 
-Table 3 tabulates the read counts associated with each on-target site and the associated proportion for Uncharacterized (Unchar.), WildType (unedited), Insertion, and Deletion containing reads. Read counts are in **bold**, while proportions are in plain text and between 0 and 1.
+Table 3 tabulates the read counts associated with each on-target site and the associated proportion for Uncharacterized (Unchar.), WildType (unedited), Insertion, and Deletion containing reads. Read counts are in **bold**, while proportions are in plain text and between 0 and 1. Proportions within parenthesis are indicating out-of-frame insertions or deletions.
 
 ```{r on_tar_summary_tbl}
 on_tar_summary_print <- on_tar_summary_tbl %>%
@@ -61,7 +61,7 @@ Similar to Table 3, Figure 1 displays the proportion of reads edited from each o
 
 ```{r on_tar_graphic, fig.width=7.5, fig.height=3.5}
 on_tar_plot_data <- on_tar_summary_tbl %>%
-  dplyr::select(-total.cnt) %>%
+  dplyr::select(-total.cnt, -in.oof, -del.oof) %>%
   tidyr::gather(key = type, value = freq, -specimen, -rname) %>%
   dplyr::mutate(
     rname = factor(
@@ -152,8 +152,8 @@ null <- lapply(seq_along(on_indel_profile), function(i, target, totals, fp){
     p <- plot_indel_cov(on_indel_profile[[i]], target, totals = totals) + 
       custom_theme
     
-    file_pdf <- sprintf("on_target_del_profile-%s.pdf", i)
-    file_png <- sprintf("on_target_del_profile-%s.png", i)
+    file_pdf <- sprintf("on_target_indel_profile-%s.pdf", i)
+    file_png <- sprintf("on_target_indel_profile-%s.png", i)
       
     ggsave(
       filename = file_pdf, 

@@ -23,31 +23,38 @@ parser <- ArgumentParser(
 
 parser$add_argument(
   "-u", "--unique", type = "character", 
-  help = "Unique alignments output from processing.")
+  help = "Unique alignments output from processing."
+)
 
 parser$add_argument(
   "-a", "--chimera", type = "character", 
-  help = "Chimeric alignments output from processing.")
+  help = "Chimeric alignments output from processing."
+)
 
 parser$add_argument(
   "-o", "--output", type = "character", 
-  help = "Output path for report. No extension required.")
+  help = "Output path for report. No extension required."
+)
 
 parser$add_argument(
   "-c", "--config", nargs = 1, type = "character",
-  help = "Run specific config file(s) in yaml format.")
+  help = "Run specific config file(s) in yaml format."
+)
 
 parser$add_argument(
   "-r", "--ref", nargs = 1, type = "character",
-  help = "Reference sequences specific to panel.")
+  help = "Reference sequences specific to panel."
+)
 
 parser$add_argument(
   "-s", "--support", nargs = 1, type = "character",
-  help = "Supplementary data input, csv or tsv format.")
+  help = "Supplementary data input, csv or tsv format."
+)
 
 parser$add_argument(
   "-f", "--figures", action = "store_true",
-  help = "Generate figures along with output report (pdf and png formats).")
+  help = "Generate figures along with output report (pdf and png formats)."
+)
 
 parser$add_argument(
   "-b", "--tables", action = "store_true",
@@ -56,11 +63,13 @@ parser$add_argument(
 
 parser$add_argument(
   "-d", "--data", action = "store_true",
-  help = "Data to generate the report will be saved as an R image with output.")
+  help = "Data to generate the report will be saved as an R image with output."
+)
 
 parser$add_argument(
   "-t", "--format", nargs = 1, type = "character", default = "html",
-  help = "Output format for report. Either 'pdf' or 'html' (default).")
+  help = "Output format for report. Either 'pdf' or 'html' (default)."
+)
 
 parser$add_argument(
   "--template", nargs = 1, type = "character", 
@@ -191,9 +200,7 @@ cntSym <- function(cigar, sym, max.only = FALSE){
   match_sym <- paste0("[0-9]+", sym)
   ex_mat <- stringr::str_extract_all(cigar, match_sym, simplify = TRUE)
   
-  ex_mat <- as.numeric(
-    gsub(sym, "", IRanges::ifelse2(nchar(ex_mat) == 0, 0, ex_mat))
-  )
+  ex_mat <- as.numeric(gsub(sym, "", ifelse(nchar(ex_mat) == 0, 0, ex_mat)))
   
   ex_mat <- matrix(ex_mat, nrow = length(cigar))
   
@@ -926,7 +933,7 @@ if( !args$figures ){
       path = figure_path, pattern = "target_editing", full.names = TRUE
     ),
     list.files(
-      path = figure_path, pattern = "target_del_profile", full.names = TRUE
+      path = figure_path, pattern = "target_indel_profile", full.names = TRUE
     )
   )
   
