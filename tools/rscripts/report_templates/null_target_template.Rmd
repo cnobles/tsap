@@ -8,13 +8,13 @@ null_tar_summary_print <- null_tar_summary_tbl %>%
   dplyr::mutate(
     "Reads" = pNums(total.cnt, digits = 0),
     "Unchar." = pNums(unc.freq),
-    "Complete" = pNums(com.freq),
+    "WildType" = pNums(com.freq),
     "Insertion" = pNums(in.freq),
     "Deletion" = pNums(del.freq)
   ) %>%
   dplyr::ungroup() %>%
   dplyr::select(
-    specimen, rname, Reads, Unchar., Complete, Insertion, Deletion
+    specimen, rname, Reads, Unchar., WildType, Insertion, Deletion
   ) %>%
   tidyr::gather(Type, val, -specimen, -rname) %>%
   tidyr::spread(rname, val, fill = "-") %>%
@@ -25,7 +25,7 @@ null_tar_summary_print <- null_tar_summary_tbl %>%
     ),
     Type = factor(
       Type , 
-      levels = c("Reads", "Unchar.", "Complete", "Insertion", "Deletion")
+      levels = c("Reads", "Unchar.", "WildType", "Insertion", "Deletion")
     )
   ) %>%
   dplyr::arrange(specimen, Type) %>%
@@ -75,7 +75,7 @@ null_tar_plot_data <- null_tar_summary_tbl %>%
   dplyr::arrange(desc(type))
 
 levels(null_tar_plot_data$type) <- c(
-  "Unchar.", "Complete", "Insertion", "Deletion"
+  "Unchar.", "WildType", "Insertion", "Deletion"
 )
 
 null_tar_graphic <- ggplot(
@@ -132,20 +132,20 @@ if( args$format == "pdf"){
 cat(fig_caps[5]) 
 ```
 
-```{r null_tar_del_profile, fig.width=7.5, fig.height=2.15}
-null_del_profile <- edit_grl$D[edit_grl$D$edit == "null"]
+```{r null_tar_indel_profile, fig.width=7.5, fig.height=2.15}
+null_indel_profile <- edit_grl$D[edit_grl$D$edit == "null"]
 
-null_del_profile <- null_del_profile[
-  rep(seq_along(null_del_profile), null_del_profile$count)
+null_indel_profile <- null_indel_profile[
+  rep(seq_along(null_indel_profile), null_indel_profile$count)
 ]
 
-null_del_profile$count <- NULL
+null_indel_profile$count <- NULL
 
-null_del_profile <- split(null_del_profile, null_del_profile$specimen)
+null_indel_profile <- split(null_indel_profile, null_indel_profile$specimen)
 
-null <- lapply(seq_along(null_del_profile), function(i, target, totals, fp){
+null <- lapply(seq_along(null_indel_profile), function(i, target, totals, fp){
   
-    p <- plot_indel_cov(null_del_profile[[i]], target, totals = totals) + 
+    p <- plot_indel_cov(null_indel_profile[[i]], target, totals = totals) + 
       custom_theme
     
     file_pdf <- sprintf("null_target_del_profile-%s.pdf", i)
@@ -182,8 +182,8 @@ if( args$format == "pdf"){
   
   knitr::include_graphics(
     path = sprintf(
-      file.path(figure_path, "null_target_del_profile-%s.pdf"), 
-      seq_along(null_del_profile)
+      file.path(figure_path, "null_target_indel_profile-%s.pdf"), 
+      seq_along(null_indel_profile)
     )
   )
   
@@ -192,8 +192,8 @@ if( args$format == "pdf"){
   
   knitr::include_graphics(
     path = sprintf(
-      file.path(figure_path, "null_target_del_profile-%s.png"), 
-      seq_along(null_del_profile)
+      file.path(figure_path, "null_target_indel_profile-%s.png"), 
+      seq_along(null_indel_profile)
     )
   )
   

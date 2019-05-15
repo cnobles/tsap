@@ -3,9 +3,9 @@
 __conda_url=https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
 
 read -r -d '' __usage <<-'EOF'
-  -e --environment  [arg] Environment to install to. Default: "tsap"
-  -s --tsap_dir   [arg] Location of tsap source code. Default: this directory
-  -c --conda  [arg]       Location of Conda installation. Default: ${PREFIX}
+  -e --environment [arg]  Environment to install to. Default: "tsap"
+  -s --tsap_dir [arg]     Location of tsap source code. Default: this directory
+  -c --conda [arg]        Location of Conda installation. Default: ${PREFIX}
   -u --update [arg]       Update tsap [lib]rary, conda [env], or [all].
   -r --requirements       Install from requirements rather than build (slow).
   -t --test               After installation, run test to check functionality.

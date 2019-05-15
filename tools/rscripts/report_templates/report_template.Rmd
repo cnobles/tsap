@@ -111,11 +111,11 @@ tbl_caps <- c(
 
 fig_caps <- c(
   "Proportional on-target editing.",
-  "On-target deletion profile.",
+  "On-target indel (insertion and deletion) profile(s).",
   "Proportional off-target editing.",
-  "Off-target deletion profile.",
+  "Off-target indel (insertion and deletion) profile(s).",
   "Proportional null or control target editing.",
-  "Control target deletion profile."
+  "Control target indel (insertion and deletion) profile(s)."
 )
 
 if(args$format == "html"){
@@ -131,7 +131,7 @@ shrt_tbl <- distinct(input_uniq, specimen, edit)
 
 # Summary
 
-Targeted amplicon sequencing was conducted on specimens to validate nuclease editing at on- and off-target genomic loci. Genomic DNA was amplified with pairs of primers flanking `r unname(table(panel_targets$edit)["on"])` on-target(s), `r unname(table(panel_targets$edit)["off"])` off-target(s), and `r unname(table(panel_targets$edit)["null"])` control target(s) sites. Amplified product were then sequenced on an Illumina instrument and analyzed using custom-designed software. In this report, results for on-, off-, and control sites are found in different sections, which all include the proportion of complete (unedited) amplicons, as well as insertion and deletion containing amplicons.
+Targeted amplicon sequencing was conducted on specimens to validate nuclease editing at on- and off-target genomic loci. Genomic DNA was amplified with pairs of primers flanking `r unname(table(panel_targets$edit)["on"])` on-target(s), `r unname(table(panel_targets$edit)["off"])` off-target(s), and `r unname(table(panel_targets$edit)["null"])` control target(s) sites. Amplified product were then sequenced on an Illumina instrument and analyzed using custom-designed software. In this report, results for on-, off-, and control sites are found in different sections, which all include the proportion of wild type (unedited) amplicons, as well as insertion and deletion containing amplicons.
 
 ```{r} 
 if(args$format == "pdf"){
@@ -168,7 +168,7 @@ kable(
 
 ```
 
-Total read counts corresponding to on-, off-, and control target sites can be found in Table 2. The replicate counts for each specimen indicate the number of technical replicates that were performed. InDel (or insertion / deletion) associated reads indicate the number of edited reads observed across all sites. On-, Off-, and Control target site read counts indicate the number of reads associated with each type of target site (including both complete or unedited reads and indel containing reads).
+Total read counts corresponding to on-, off-, and control target sites can be found in Table 2. The replicate counts for each specimen indicate the number of technical replicates that were performed. InDel (or insertion / deletion) associated reads indicate the number of edited reads observed across all sites. On-, Off-, and Control target site read counts indicate the number of reads associated with each type of target site (including both wild type or unedited reads and indel containing reads).
 
 ```{r spec_summary}
 if( args$tables ){

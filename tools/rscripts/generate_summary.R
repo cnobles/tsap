@@ -70,7 +70,7 @@ parser$add_argument(
 
 parser$add_argument(
   "--install_dir", nargs = 1, type = "character", default = "TSAP_DIR",
-  help = "VivI install directory path, do not change for normal applications."
+  help = "TsAP install directory path, do not change for normal applications."
 )
 
 
@@ -83,7 +83,7 @@ if( !dir.exists(args$install_dir) ){
 }
 
 if( !dir.exists(root_dir) ){
-  stop(paste0("\n  Cannot find install path to VivI: ", root_dir, ".\n"))
+  stop(paste0("\n  Cannot find install path to TsAP: ", root_dir, ".\n"))
 }else{
   args$install_dir <- root_dir
 }
@@ -328,8 +328,8 @@ cigarRanges <- function(rname, cigar, pos, sym, seq.info){
 }
 
 pNums <- function(x, round = 3, digits = 3, big.mark = ",", ...){
-  x <- ifelse(is.na(x), 0, x)
-  if(x >= 100){
+  x <- ifelse(is.na(x), rep(0, length(x)), x)
+  if(max(x) >= 100){
     return(format(x, big.mark = big.mark, ...))
   }else{
     spntf <- paste0("%.", digits, "f")
@@ -404,15 +404,20 @@ ucid_analysis <- function(input, pct_ID = 0.95){
       is.com = seq_len(n()) %in% uniq_M_idx,
       is.ins = seq_len(n()) %in% uniq_I_idx,
       is.del = seq_len(n()) %in% uniq_D_idx,
-      is.unc = !is.com & !is.ins & !is.del
+      is.unc = !is.com & !is.ins & !is.del,
+      del.oof = del.cnt %% 3 != 0,
+      ins.oof = in.cnt %% 3 != 0
     ) %>%
     dplyr::group_by(specimen, rname) %>%
     dplyr::summarise(
       total.cnt = sum(count),
-      unc.freq = sum(count[is.unc] / sum(count)),
+      unc.freq = sum(count[is.unc]) / sum(count),
       com.freq = sum(count[is.com]) / sum(count),
       in.freq = sum(count[is.ins]) / sum(count),
-      del.freq = sum(count[is.del] / sum(count))) %>%
+      in.oof = sum(count[is.ins & ins.oof]) / sum(count),
+      del.freq = sum(count[is.del]) / sum(count),
+      del.oof = sum(count[is.del & del.oof]) / sum(count)
+    ) %>%
     dplyr::ungroup()
   
 }
@@ -504,33 +509,88 @@ trim_0_edges <- function(x, tar_pos, min_dist){
 
 plot_indel_cov <- function(gr, target, totals, min_dist = 50L){
   
-  df <- as.data.frame(GenomicRanges::coverage(gr)) %>% 
+  grl <- split(gr, gr$symbol)[c("D", "I")]
+  
+  ins_df <- grl$I %>%
+    GenomicRanges::shift(shift = -as.integer(.$in.len / 2)) %>%
+    GenomicRanges::flank(width = -.$in.len, start = TRUE) %>%
+    GenomicRanges::coverage() %>%
+    as.data.frame() %>% 
     dplyr::mutate(
-      specimen = unique(gr$specimen)
+      specimen = unique(grl$I$specimen)
     ) %>%
     dplyr::group_by(specimen, group_name) %>%
     dplyr::mutate(
       pos = seq_len(n()),
-      trim = !trim_0_edges(
+      trim.i = !trim_0_edges(
         x = value, 
         tar_pos = start(target)[match(unique(group_name), seqnames(target))],
         min_dist = min_dist
       )
     ) %>%
     dplyr::ungroup() %>%
-    dplyr::filter(trim) %>%
-    dplyr::select(-group, -trim) %>%
+    dplyr::select(-group) %>%
+    dplyr::rename(rname = group_name) %>%
+    dplyr::left_join(totals, by = c("specimen", "rname")) %>%
+    dplyr::mutate(coverage = value / count) %>%
+    dplyr::filter(rname %in% unique(seqnames(gr)))
+
+  del_df <- grl$D %>%
+    GenomicRanges::coverage() %>%
+    as.data.frame() %>% 
+    dplyr::mutate(
+      specimen = unique(grl$D$specimen)
+    ) %>%
+    dplyr::group_by(specimen, group_name) %>%
+    dplyr::mutate(
+      pos = seq_len(n()),
+      trim.d = !trim_0_edges(
+        x = value, 
+        tar_pos = start(target)[match(unique(group_name), seqnames(target))],
+        min_dist = min_dist
+      )
+    ) %>%
+    dplyr::ungroup() %>%
+    dplyr::select(-group) %>%
     dplyr::rename(rname = group_name) %>%
     dplyr::left_join(totals, by = c("specimen", "rname")) %>%
     dplyr::mutate(coverage = (count - value) / count) %>%
     dplyr::filter(rname %in% unique(seqnames(gr)))
   
+  plot_ranges <- dplyr::full_join(
+      dplyr::select(ins_df, rname, pos, trim.i),
+      dplyr::select(del_df, rname, pos, trim.d),
+      by = c("rname", "pos")
+    ) %>%
+    dplyr::filter(trim.i | trim.d) %>%
+    dplyr::group_by(rname) %>%
+    dplyr::summarise(min = min(pos), max = max(pos)) %>%
+    dplyr::ungroup()
+  
+  ins_df <- ins_df %>%
+    dplyr::group_by(rname) %>%
+    dplyr::filter(
+      pos <= plot_ranges$max[match(rname, plot_ranges$rname)] &
+        pos >= plot_ranges$min[match(rname, plot_ranges$rname)]
+    ) %>%
+    dplyr::ungroup() %>%
+    dplyr::select(-trim.i)
+
+  del_df <- del_df %>%
+    dplyr::group_by(rname) %>%
+    dplyr::filter(
+      pos <= plot_ranges$max[match(rname, plot_ranges$rname)] &
+        pos >= plot_ranges$min[match(rname, plot_ranges$rname)]
+    ) %>%
+    dplyr::ungroup() %>%
+    dplyr::select(-trim.d)
+  
   target_sites <- as.data.frame(target, row.names = NULL) %>%
-    dplyr::filter(seqnames %in% df$rname) %>%
+    dplyr::filter(seqnames %in% unique(seqnames(gr))) %>%
     dplyr::mutate(pos = start) %>%
     dplyr::select(seqnames, pos)
   
-  df <- df %>%
+  df <- dplyr::bind_rows(list("I" = ins_df, "D" = del_df), .id = "symbol") %>%
     dplyr::mutate(
       rname = factor(rname, levels = target_sites$seqnames)
     ) %>%
@@ -540,8 +600,22 @@ plot_indel_cov <- function(gr, target, totals, min_dist = 50L){
       rname = paste0(as.character(rname), " (read depth = ", pNums(count), ")"),
       rname = factor(rname, levels = unique(rname))
     )
+
+  ins_maxs <- df %>%
+    dplyr::filter(symbol == "I") %>%
+    dplyr::group_by(specimen, rname) %>%
+    dplyr::summarise(
+      min_x = min(pos),
+      max_x = max(pos),
+      max_cov = max(coverage),
+      max_cov_format = paste0(
+        pNums(100 * max_cov, round = 1, digits = 1), 
+        "%"
+      )
+    )
   
-  df_mins <- df %>%
+  del_mins <- df %>%
+    dplyr::filter(symbol == "D") %>%
     dplyr::group_by(specimen, rname) %>%
     dplyr::summarise(
       min_x = min(pos),
@@ -552,27 +626,51 @@ plot_indel_cov <- function(gr, target, totals, min_dist = 50L){
         "%"
       )
     )
-
+    
   ggplot() + 
     geom_bar(
-      data = df,
+      data = dplyr::filter(df, symbol == "D"),
       aes(x = pos, y = coverage), 
       fill = "grey40", width = 1L, stat = "identity"
     ) +
-    geom_hline(
-      data = df_mins, aes(yintercept = min_cov), color = "grey75"
+    geom_bar(
+      data = dplyr::filter(df, symbol == "I"),
+      aes(x = pos, y = coverage), 
+      fill = "green", width = 1L, stat = "identity"
+    ) +
+    geom_segment(
+      data = del_mins, 
+      aes(x = min_x, xend = 0, y = min_cov, yend = min_cov), 
+      color = "white", alpha = 0.5
+    ) +
+    geom_segment(
+      data = ins_maxs, 
+      aes(x = 0, xend = max_x, y = max_cov, yend = max_cov), 
+      color = "green", alpha = 0.5
     ) +
     geom_text(
-      data = dplyr::filter(df_mins, min_cov < 0.5), 
+      data = dplyr::filter(del_mins, min_cov < 0.5), 
       aes(x = min_x, y = min_cov, label = min_cov_format),
       hjust = 0, vjust = 0, nudge_x = 2.5, nudge_y = 0.02,
       color = "white", fontface = "bold"
     ) +
     geom_text(
-      data = dplyr::filter(df_mins, min_cov >= 0.5), 
+      data = dplyr::filter(del_mins, min_cov >= 0.5), 
       aes(x = min_x, y = min_cov, label = min_cov_format),
       hjust = 0, vjust = 1, nudge_x = 2.5, nudge_y = -0.02,
       color = "white", fontface = "bold"
+    ) +
+    geom_text(
+      data = dplyr::filter(ins_maxs, max_cov < 0.5), 
+      aes(x = max_x, y = max_cov, label = max_cov_format),
+      hjust = 1, vjust = 0, nudge_x = -2.5, nudge_y = 0.02,
+      color = "green", fontface = "bold"
+    ) +
+    geom_text(
+      data = dplyr::filter(ins_maxs, max_cov >= 0.5), 
+      aes(x = max_x, y = max_cov, label = max_cov_format),
+      hjust = 1, vjust = 1, nudge_x = -2.5, nudge_y = -0.02,
+      color = "green", fontface = "bold"
     ) +
     scale_y_continuous(breaks = c(0, 1), labels = c(1, 0)) +
     facet_wrap(
@@ -645,7 +743,8 @@ build_version <- list.files(file.path(root_dir, "etc")) %>%
 message("Loading alignment data.")
 
 input_uniq <- data.table::fread(
-    args$unique, header = TRUE, data.table = FALSE) %>%
+    args$unique, header = TRUE, data.table = FALSE
+  ) %>%
   dplyr::mutate(
     samplename = stringr::str_extract(qname, "[\\w\\-]+"),
     specimen = stringr::str_extract(samplename, "[\\w]+"),
@@ -738,8 +837,6 @@ edit_gr$specimen <- input_uniq$specimen[edit_gr$index]
 edit_gr$condition <- input_uniq$condition[edit_gr$index]
 edit_gr$edit <- input_uniq$edit[edit_gr$index]
 edit_gr$count <- input_uniq$count[edit_gr$index]
-
-edit_grl <- split(edit_gr, edit_gr$symbol)
 
 total_specimen_counts <- input_uniq %>% 
   dplyr::group_by(specimen, rname, condition) %>% 

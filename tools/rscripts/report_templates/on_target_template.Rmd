@@ -1,6 +1,6 @@
 # On-target analysis
 
-Table 3 tabulates the read counts associated with each on-target site and the associated proportion for Uncharacterized (Unchar.), Complete (unedited), Insertion, and Deletion containing reads. Read counts are in **bold**, while proportions are in plain text and between 0 and 1.
+Table 3 tabulates the read counts associated with each on-target site and the associated proportion for Uncharacterized (Unchar.), WildType (unedited), Insertion, and Deletion containing reads. Read counts are in **bold**, while proportions are in plain text and between 0 and 1.
 
 ```{r on_tar_summary_tbl}
 on_tar_summary_print <- on_tar_summary_tbl %>%
@@ -8,13 +8,13 @@ on_tar_summary_print <- on_tar_summary_tbl %>%
   dplyr::mutate(
     "Reads" = pNums(total.cnt, digits = 0),
     "Unchar." = pNums(unc.freq),
-    "Complete" = pNums(com.freq),
-    "Insertion" = pNums(in.freq),
-    "Deletion" = pNums(del.freq)
+    "WildType" = pNums(com.freq),
+    "Insertion" = paste0(pNums(in.freq), " (", pNums(in.oof), ")"),
+    "Deletion" = paste0(pNums(del.freq), " (", pNums(del.oof), ")")
   ) %>%
   dplyr::ungroup() %>%
   dplyr::select(
-    specimen, rname, Reads, Unchar., Complete, Insertion, Deletion
+    specimen, rname, Reads, Unchar., WildType, Insertion, Deletion
   ) %>%
   tidyr::gather(Type, val, -specimen, -rname) %>%
   tidyr::spread(rname, val, fill = "-") %>%
@@ -25,7 +25,7 @@ on_tar_summary_print <- on_tar_summary_tbl %>%
     ),
     Type = factor(
       Type , 
-      levels = c("Reads", "Unchar.", "Complete", "Insertion", "Deletion")
+      levels = c("Reads", "Unchar.", "WildType", "Insertion", "Deletion")
     )
   ) %>%
   dplyr::arrange(specimen, Type) %>%
@@ -77,7 +77,7 @@ on_tar_plot_data <- on_tar_summary_tbl %>%
   dplyr::arrange(desc(type))
 
 levels(on_tar_plot_data$type) <- c(
-  "Unchar.", "Complete", "Insertion", "Deletion"
+  "Unchar.", "WildType", "Insertion", "Deletion"
 )
 
 on_tar_graphic <- ggplot(
@@ -135,22 +135,21 @@ if( args$format == "pdf"){
 cat(fig_caps[1]) 
 ```
 
-Indel profiles, or the distribution of deleted DNA around the target site, are show in Figure 2 for reads containing deletions at the target sites. The height of the data is associated with the number of reads observed containing the respective position. Deletion profiles have been separated based on specimens and target site.
+Indel profiles, or the distribution of inserted and deleted DNA around the target site, are show in Figure 2 for the target sites. The height of the data is associated with the number of reads observed containing the respective position. Gaps at the top of the plots indicate the proportion of reads with missing sequence while green bars at the bottom indicate the proportion of reads with insertions. Indel profiles have been separated based on specimens and target site.
 
-```{r on_tar_del_profile, fig.width=7.5, fig.height=2.15}
-on_del_profile <- edit_grl$D[edit_grl$D$edit == "on"]
+```{r on_tar_indel_profile, fig.width=7.5, fig.height=2.15}
+on_indel_profile <- edit_gr[edit_gr$edit == "on"]
 
-on_del_profile <- on_del_profile[
-  rep(seq_along(on_del_profile), on_del_profile$count)
+on_indel_profile <- on_indel_profile[
+  rep(seq_along(on_indel_profile), on_indel_profile$count)
 ]
 
-on_del_profile$count <- NULL
+on_indel_profile$count <- NULL
+on_indel_profile <- split(on_indel_profile, on_indel_profile$specimen)
 
-on_del_profile <- split(on_del_profile, on_del_profile$specimen)
-
-null <- lapply(seq_along(on_del_profile), function(i, target, totals, fp){
+null <- lapply(seq_along(on_indel_profile), function(i, target, totals, fp){
   
-    p <- plot_indel_cov(on_del_profile[[i]], target, totals = totals) + 
+    p <- plot_indel_cov(on_indel_profile[[i]], target, totals = totals) + 
       custom_theme
     
     file_pdf <- sprintf("on_target_del_profile-%s.pdf", i)
@@ -187,8 +186,8 @@ if( args$format == "pdf"){
   
   knitr::include_graphics(
     path = sprintf(
-      file.path(figure_path, "on_target_del_profile-%s.pdf"), 
-      seq_along(on_del_profile)
+      file.path(figure_path, "on_target_indel_profile-%s.pdf"), 
+      seq_along(on_indel_profile)
     )
   )
   
@@ -196,8 +195,8 @@ if( args$format == "pdf"){
   
   knitr::include_graphics(
     path = sprintf(
-      file.path(figure_path, "on_target_del_profile-%s.png"), 
-      seq_along(on_del_profile)
+      file.path(figure_path, "on_target_indel_profile-%s.png"), 
+      seq_along(on_indel_profile)
     )
   )
   
