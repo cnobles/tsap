@@ -337,17 +337,18 @@ cigarRanges <- function(rname, cigar, pos, sym, seq.info){
 pNums <- function(x, round = 3, digits = 3, big.mark = ",", ...){
   x <- ifelse(is.na(x), rep(0, length(x)), x)
   if(max(x) >= 100){
-    return(format(x, big.mark = big.mark, ...))
+     y <- format(x, big.mark = big.mark, ...)
   }else{
     spntf <- paste0("%.", digits, "f")
-    return(sprintf(spntf, round(x, round)))
+    y <- sprintf(spntf, round(x, round))
   }
+  stringr::str_trim(string = y, side = "both")
 }
 
-ucid_analysis <- function(input, pct_ID = 0.95){
+ucid_analysis <- function(input, targets, edit.dist, seq_info, pct_ID = 0.95){
   
   uniq_MID_grl <- input %$%
-    cigarRanges(rname, cigar, pos, sym = "MID", seq.info = ref_seqinfo) %>%
+    cigarRanges(rname, cigar, pos, sym = "MID", seq.info = seq_info) %>%
     unlist() %>%
     split(., .$symbol)
   
@@ -356,7 +357,7 @@ ucid_analysis <- function(input, pct_ID = 0.95){
     uniq_I_grl <- split(uniq_MID_grl[["I"]], uniq_MID_grl[["I"]]$index)
     
     uniq_I_idx <- GenomicRanges::findOverlaps(
-        norm_targets, uniq_I_grl, maxgap = config$maxDistFromEdit
+        targets, uniq_I_grl, maxgap = edit.dist
       ) %>%
       S4Vectors::subjectHits() %>%
       uniq_I_grl[.] %>%
@@ -374,7 +375,7 @@ ucid_analysis <- function(input, pct_ID = 0.95){
     uniq_D_grl <- split(uniq_MID_grl[["D"]], uniq_MID_grl[["D"]]$index)
     
     uniq_D_idx <- GenomicRanges::findOverlaps(
-        norm_targets, uniq_D_grl, maxgap = config$maxDistFromEdit
+        targets, uniq_D_grl, maxgap = edit.dist
       ) %>%
       S4Vectors::subjectHits() %>%
       uniq_D_grl[.] %>%
@@ -604,7 +605,7 @@ plot_indel_cov <- function(gr, target, totals, min_dist = 50L){
     dplyr::arrange(rname) %>%
     dplyr::mutate(
       pos = pos - target_sites$pos[match(rname, target_sites$seqnames)],
-      rname = paste0(as.character(rname), " (read depth = ", pNums(count), ")"),
+      rname = paste0(as.character(rname), " (", pNums(count), " reads)"),
       rname = factor(rname, levels = unique(rname))
     )
 
@@ -811,21 +812,33 @@ names(summary_tbl) <- c(
 if( any(input_uniq$edit == "on") ){
   on_tar_summary_tbl <- input_uniq %>%
     dplyr::filter(edit == "on") %>%
-    ucid_analysis()
+    ucid_analysis(
+      targets = norm_targets, 
+      edit.dist = config$maxDistFromEdit, 
+      seq_info = ref_seqinfo
+    )
 }
 
 ## Off-target Summary ------------------
 if( any(input_uniq$edit == "off") ){
   off_tar_summary_tbl <- input_uniq %>%
     dplyr::filter(edit == "off") %>%
-    ucid_analysis()
+    ucid_analysis(
+      targets = norm_targets, 
+      edit.dist = config$maxDistFromEdit, 
+      seq_info = ref_seqinfo
+    )
 }
   
 ## Null-target Summary ----------------
 if( any(input_uniq$edit == "null") ){
   null_tar_summary_tbl <- input_uniq %>%
     dplyr::filter(edit == "null") %>%
-    ucid_analysis()
+    ucid_analysis(
+      targets = norm_targets, 
+      edit.dist = config$maxDistFromEdit, 
+      seq_info = ref_seqinfo
+    )
 }
 
 ## InDel Profiles ---------------------

@@ -133,7 +133,7 @@ cat(fig_caps[5])
 ```
 
 ```{r null_tar_indel_profile, fig.width=7.5, fig.height=2.15}
-null_indel_profile <- edit_grl$D[edit_grl$D$edit == "null"]
+null_indel_profile <- edit_gr[edit_gr$edit == "null"]
 
 null_indel_profile <- null_indel_profile[
   rep(seq_along(null_indel_profile), null_indel_profile$count)
@@ -173,7 +173,11 @@ null <- lapply(seq_along(null_indel_profile), function(i, target, totals, fp){
     )
     
   },
-  target = norm_targets,
+  target = norm_targets[
+    seqnames(norm_targets) %in% panel_targets$target[
+      panel_targets$edit == "null"
+    ]
+  ],
   totals = total_specimen_counts,
   fp = figure_path
 )
