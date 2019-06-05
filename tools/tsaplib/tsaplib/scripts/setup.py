@@ -71,19 +71,23 @@ def main( argv = sys.argv ):
         "input_data", "logs", "processData", "output", "reports"
     ]
     
-    output_sub_directories = ["unique_aligns", "chimera_aligns"]
-    
     for sub_dir in sub_directories:
         os.makedirs(str(analysis_directory / sub_dir))
         
-    for out_sub in output_sub_directories:
-        os.makedirs(str(analysis_directory / "output" / out_sub))
-
     # Check for input files
     read_types = config["Read_Types"] 
-     
-    for type in read_types: 
-        check_existing_fastq(Path(config["Seq_Path"]) / config[type])
+    
+    if config["Platform"] == "illumina": 
+        for type in read_types: 
+            check_existing_fastq(Path(config["Seq_Path"]) / config[type])
+    elif config["Platform"] == "nanopore":
+        for type in read_types: 
+            check_existing_fastq(Path(config["Seq_Path"]))
+    else:
+        sys.stderr.write(
+            "Error: Only 'illumina' and 'nanopore' sequencing platforms supported, not: '{}'.\n".format(
+                str(config["Platform"])))
+        sys.exit(1)
 
     # Create symbolic link to config
     config_path = Path(args.config).absolute()

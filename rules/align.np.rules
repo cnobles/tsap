@@ -1,0 +1,87 @@
+# -*- mode: Snakemake -*-
+# Sequence Alignment for Nanopore sequencing: BWA based
+
+rule build_ref:
+  input: ROOT_DIR + "/" + config["Panel_Path"]
+  output: temp(ROOT_DIR + "/genomes/" + PANEL + ".tmp.fasta")
+  params: 
+    tool="tools/rscripts/gen_panal_refs.R",
+    ref=config["RefGenome"],
+    max=config["Max_Length"]
+  log:
+    RUN_DIR + "/logs/panel.ref.log"
+  shell:
+    "Rscript {params.tool} {input} -o {output} -r {params.ref} -m {params.max} > {log} 2>&1"
+
+rule index_ref:
+  input: ROOT_DIR + "/genomes/" + PANEL + ".tmp.fasta"
+  output: 
+    ref=ROOT_DIR + "/genomes/" + PANEL + ".fasta",
+    aux1=ROOT_DIR + "/genomes/" + PANEL + ".amb",
+    aux2=ROOT_DIR + "/genomes/" + PANEL + ".ann",
+    aux3=ROOT_DIR + "/genomes/" + PANEL + ".bwt",
+    aux4=ROOT_DIR + "/genomes/" + PANEL + ".pac",
+    aux5=ROOT_DIR + "/genomes/" + PANEL + ".sa"
+  params: ROOT_DIR + "/genomes/" + PANEL
+  shell:
+    """
+    cp {input} {output.ref}
+    bwa index -p {params} {output.ref}
+    """
+    
+rule align_complete:
+  input:
+    seq=RUN_DIR + "/processData/{sample}.comfilt.fastq.gz",
+    genome=ancient(ROOT_DIR + "/genomes/" + PANEL + ".fasta"),
+    aux1=ancient(ROOT_DIR + "/genomes/" + PANEL + ".amb"),
+    aux2=ancient(ROOT_DIR + "/genomes/" + PANEL + ".ann"),
+    aux3=ancient(ROOT_DIR + "/genomes/" + PANEL + ".bwt"),
+    aux4=ancient(ROOT_DIR + "/genomes/" + PANEL + ".pac"),
+    aux5=ancient(ROOT_DIR + "/genomes/" + PANEL + ".sa")
+  output:
+    temp(RUN_DIR + "/processData/{sample}.com.unsorted.bam")
+  params: 
+    bwa=config["npBWAparams"],
+    index=ROOT_DIR + "/genomes/" + PANEL
+  shell:
+    "graphmap align -r {input.genome} -d {input.seq} | samtools view -b -o {output}"
+    #"bwa mem {params.bwa} {params.index} {input.seq} | samtools view -b -o {output}"
+    
+
+rule sort_complete:
+  input: RUN_DIR + "/processData/{sample}.com.unsorted.bam"
+  output: RUN_DIR + "/processData/{sample}.com.bam"
+  shell: "samtools sort {input} -o {output}"
+
+rule index_complete:
+  input: RUN_DIR + "/processData/{sample}.com.bam"
+  output: RUN_DIR + "/processData/{sample}.com.bai"
+  shell: "samtools index -b {input} {output}"
+
+rule align_incomplete:
+  input:
+    seq=RUN_DIR + "/processData/{sample}.inctrim.fastq.gz",
+    panel=ancient(ROOT_DIR + "/genomes/" + PANEL + ".fasta"),
+    aux1=ancient(ROOT_DIR + "/genomes/" + PANEL + ".amb"),
+    aux2=ancient(ROOT_DIR + "/genomes/" + PANEL + ".ann"),
+    aux3=ancient(ROOT_DIR + "/genomes/" + PANEL + ".bwt"),
+    aux4=ancient(ROOT_DIR + "/genomes/" + PANEL + ".pac"),
+    aux5=ancient(ROOT_DIR + "/genomes/" + PANEL + ".sa")
+  output:
+    temp(RUN_DIR + "/processData/{sample}.inc.unsorted.bam")
+  params: 
+    bwa=config["npBWAparams"],
+    index=ROOT_DIR + "/genomes/" + PANEL
+  shell:
+    "graphmap align -r {input.genome} -d {input.seq} | samtools view -b -o {output}"
+    #"bwa mem {params.bwa} {params.index} {input.seq} | samtools view -b -o {output}"
+    
+rule sort_incomplete:
+  input: RUN_DIR + "/processData/{sample}.inc.unsorted.bam"
+  output: RUN_DIR + "/processData/{sample}.inc.bam"
+  shell: "samtools sort {input} -o {output}"
+
+rule index_incomplete:
+  input: RUN_DIR + "/processData/{sample}.inc.bam"
+  output: RUN_DIR + "/processData/{sample}.inc.bai"
+  shell: "samtools index -b {input} {output}"

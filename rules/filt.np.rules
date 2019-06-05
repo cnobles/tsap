@@ -1,0 +1,64 @@
+# -*- mode: Snakemake -*-
+# Sequence Filtering Rules
+
+rule check_init:
+  input:
+    sense=RUN_DIR + "/processData/init.sense.trimmed.fastq.gz",
+    antisense=RUN_DIR + "/processData/init.antisense.trimmed.fastq.gz"
+  output:
+    sense=RUN_DIR + "/processData/init.sense.filt.fastq.gz",
+    antisense=RUN_DIR + "/processData/init.antisense.filt.fastq.gz"
+  params:
+    tool=ROOT_DIR + "/tools/rscripts/filt.R"
+  log:
+    RUN_DIR + "/logs/init.filt.log"
+  shell:
+    """
+    Rscript {params.tool} {input} --negSelect \
+      -o {output} --readNamePattern "[\\w\\-\\.\\:]+" --compress > {log} 2>&1
+    """
+
+#rule check_bc5_sense_trim:
+#  input:
+#    expand(RUN_DIR + "/processData/{sample}.sense.bctrim.fastq.gz", sample = SAMPLES)
+#  output:
+#    expand(RUN_DIR + "/processData/{sample}.sense.bcfilt.fastq.gz", sample = SAMPLES)
+#  params:
+#    tool=ROOT_DIR + "/tools/rscripts/filt.R"
+#  log:
+#    RUN_DIR + "/logs/sense.bc5filt.log"
+#  shell:
+#    """
+#    Rscript {params.tool} {input} --negSelect \
+#      -o {output} --readNamePattern "[\\w\\-\\.\\:]+" --compress > {log} 2>&1
+#    """
+  
+#rule check_bc5_antisense_trim:
+#  input:
+#    expand(RUN_DIR + "/processData/{sample}.antisense.bctrim.fastq.gz", sample = SAMPLES)
+#  output:
+#    expand(RUN_DIR + "/processData/{sample}.antisense.bcfilt.fastq.gz", sample = SAMPLES)
+#  params:
+#    tool=ROOT_DIR + "/tools/rscripts/filt.R"
+#  log:
+#    RUN_DIR + "/logs/antisense.bc5filt.log"
+#  shell:
+#    """
+#    Rscript {params.tool} {input} --negSelect \
+#      -o {output} --readNamePattern "[\\w\\-\\.\\:]+" --compress > {log} 2>&1
+#    """
+
+rule check_complete_trimmed:
+  input:
+    expand(RUN_DIR + "/processData/{sample}.comtrim.fastq.gz", sample = SAMPLES)
+  output:
+    expand(RUN_DIR + "/processData/{sample}.comfilt.fastq.gz", sample = SAMPLES)
+  params:
+    tool=ROOT_DIR + "/tools/rscripts/filt.R"
+  log:
+    RUN_DIR + "/logs/complete.filter.log"
+  shell:
+    """
+    Rscript {params.tool} {input} --negSelect \
+      -o {output} --readNamePattern "[\\w\\-\\.\\:]+" --compress > {log} 2>&1
+    """

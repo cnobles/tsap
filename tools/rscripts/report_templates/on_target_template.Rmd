@@ -10,11 +10,12 @@ on_tar_summary_print <- on_tar_summary_tbl %>%
     "Unchar." = pNums(unc.freq),
     "WildType" = pNums(com.freq),
     "Insertion" = paste0(pNums(in.freq), " (", pNums(in.oof), ")"),
-    "Deletion" = paste0(pNums(del.freq), " (", pNums(del.oof), ")")
+    "Deletion" = paste0(pNums(del.freq), " (", pNums(del.oof), ")"),
+    "InDel" = paste0(pNums(indel.freq), " (", pNums(ind.oof), ")")
   ) %>%
   dplyr::ungroup() %>%
   dplyr::select(
-    specimen, rname, Reads, Unchar., WildType, Insertion, Deletion
+    specimen, rname, Reads, Unchar., WildType, Insertion, Deletion, InDel
   ) %>%
   tidyr::gather(Type, val, -specimen, -rname) %>%
   tidyr::spread(rname, val, fill = "-") %>%
@@ -25,7 +26,9 @@ on_tar_summary_print <- on_tar_summary_tbl %>%
     ),
     Type = factor(
       Type , 
-      levels = c("Reads", "Unchar.", "WildType", "Insertion", "Deletion")
+      levels = c(
+        "Reads", "Unchar.", "WildType", "Insertion", "Deletion", "InDel"
+      )
     )
   ) %>%
   dplyr::arrange(specimen, Type) %>%
@@ -61,7 +64,7 @@ Similar to Table 3, Figure 1 displays the proportion of reads edited from each o
 
 ```{r on_tar_graphic, fig.width=7.5, fig.height=3.5}
 on_tar_plot_data <- on_tar_summary_tbl %>%
-  dplyr::select(-total.cnt, -in.oof, -del.oof) %>%
+  dplyr::select(-total.cnt, -in.oof, -del.oof, -ind.oof) %>%
   tidyr::gather(key = type, value = freq, -specimen, -rname) %>%
   dplyr::mutate(
     rname = factor(
@@ -71,21 +74,24 @@ on_tar_plot_data <- on_tar_summary_tbl %>%
       specimen, levels = unique(str_extract(sample_info$sampleName, "[\\w]+"))
     ),
     type = factor(
-      type, levels = c("unc.freq", "com.freq", "in.freq", "del.freq")
+      type, 
+      levels = c("unc.freq", "com.freq", "in.freq", "del.freq", "indel.freq")
     )
   ) %>%
   dplyr::arrange(desc(type))
 
 levels(on_tar_plot_data$type) <- c(
-  "Unchar.", "WildType", "Insertion", "Deletion"
+  "Unchar.", "WildType", "Insertion", "Deletion", "InDel"
 )
+
+paired_palette <- RColorBrewer::brewer.pal(6, "Paired")[c(1:4,6)]
 
 on_tar_graphic <- ggplot(
     on_tar_plot_data, aes(x = rname, y = freq, group = specimen)
   ) + 
   geom_bar(stat = "identity", aes(fill = type)) + 
   facet_wrap(~ specimen, nrow = 1) +
-  scale_fill_brewer(type = "qual", palette = "Paired") +
+  scale_fill_manual(values = paired_palette) +
   labs(x = NULL, y = "Frequency", fill = NULL) +
   custom_theme + 
   theme(

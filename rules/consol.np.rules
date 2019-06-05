@@ -1,0 +1,26 @@
+# -*- mode: Snakemake -*-
+# Sequence Consolidating Rules
+
+rule cat_complete:
+  input: 
+    sense=RUN_DIR + "/processData/{sample}.sense.comtrim.fastq"
+    #antisense=RUN_DIR + "/processData/{sample}.antisense.comtrim.fastq"
+  output: temp(RUN_DIR + "/processData/{sample}.comtrim.fastq")
+  shell: "cat {input} > {output}"
+
+rule compress_comp:
+  input: RUN_DIR + "/processData/{sample}.comtrim.fastq"
+  output: RUN_DIR + "/processData/{sample}.comtrim.fastq.gz"
+  shell: "gzip {input}"
+  
+rule cat_incomplete:
+  input: 
+    sense=RUN_DIR + "/processData/{sample}.sense.inctrim.fastq",
+    antisense=RUN_DIR + "/processData/{sample}.antisense.inctrim.fastq"
+  output: temp(RUN_DIR + "/processData/{sample}.inctrim.fastq")
+  shell: "cat {input} > {output}"
+
+rule compress_incomp:
+  input: RUN_DIR + "/processData/{sample}.inctrim.fastq"
+  output: RUN_DIR + "/processData/{sample}.inctrim.fastq.gz"
+  shell: "gzip {input}"

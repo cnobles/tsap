@@ -8,41 +8,62 @@ suppressMessages(library("argparse"))
 args <- commandArgs(trailingOnly = FALSE)
 
 code_dir <- dirname(
-  sub("--file=", "", grep("--file=", args, value = TRUE)))
+  sub("--file=", "", grep("--file=", args, value = TRUE))
+)
 
 #' Set up and gather command line arguments
 parser <- ArgumentParser(
-  description = "R-based utility to generate reference sequences for target panel.")
+  description = "R-based utility to generate reference sequences for target panel."
+)
+
 parser$add_argument(
   "panelFile", nargs = 1, type = "character",
   help = paste(
     "CSV file with columns: target,locus,fwd.primer,rev.primer.", 
     "Primer sequences are just portion annealing to genomic DNA and", 
-    "will be included in sequence data."))
+    "will be included in sequence data."
+  )
+)
+
 parser$add_argument(
   "-o", "--output", nargs = 1, type = "character", 
-  help = "Output file name. Output type will be parsed from extension.")
+  help = "Output file name. Output type will be parsed from extension."
+)
+
 parser$add_argument(
   "-r", "--ref", nargs = 1, type = "character", default = "hg38",
-  help = "Genomic reference draft. Default: hg38.")
+  help = "Genomic reference draft. Default: hg38."
+)
+
 parser$add_argument(
   "-m", "--maxLength", nargs = 1, type = "integer", default = 400,
-  help = "Maximum length for generated sequences. Default at 400 nts.")
+  help = "Maximum length for generated sequences. Default at 400 nts."
+)
+
 parser$add_argument(
   "-c", "--cores", nargs = 1, type = "integer", default = 1,
-  help = "If greater than 1, script will use r-parallel to multithread process.")
+  help = "If greater than 1, script will use r-parallel to multithread process."
+)
+
 args <- parser$parse_args(commandArgs(trailingOnly = TRUE))
 
 input_table <- data.frame(
   "Variable" = names(args), 
   "Value" = sapply(
-    seq_along(args), function(i) paste(args[[i]], collapse = ", ")))
+    seq_along(args), function(i) paste(args[[i]], collapse = ", ")
+  )
+)
+
 input_table <- input_table[
   match(
     c("panelFile", "output", "ref", "maxLength", "cores"), 
-    input_table$Variable),]
+    input_table$Variable),
+]
+
 input_table$Variable <- paste0(format(input_table$Variable), " :")
+
 cat("Demultiplex Inputs\n")
+
 print.data.frame(
   data.frame(input_table, row.names = NULL),
   row.names = FALSE, right = FALSE)
@@ -139,7 +160,8 @@ if(args$cores <= 1){
         rev.primer = panel$rev.primer[i], 
         target = panel$locus[i], 
         ref = ref,
-        max.size = args$maxLength)
+        max.size = args$maxLength
+      )
     }, panel = panel_data, ref = ref_genome, args = args), 
     names = panel_data$target)
 }else{
@@ -149,12 +171,13 @@ if(args$cores <= 1){
   
   panel_seqs <- structure(lapply(
     seq_len(nrow(panel_data)), function(i, panel, ref, args){
-    isolate_region(
-      fwd.primer = panel$fwd.primer[i], 
-      rev.primer = panel$rev.primer[i], 
-      target = panel$locus[i], 
-      ref = ref,
-      max.size = args$maxLength)
+      isolate_region(
+        fwd.primer = panel$fwd.primer[i], 
+        rev.primer = panel$rev.primer[i], 
+        target = panel$locus[i], 
+        ref = ref,
+        max.size = args$maxLength
+      )
     }, panel = panel_data, ref = ref_genome, args = args), 
     names = panel_data$target)
 

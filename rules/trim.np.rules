@@ -1,0 +1,157 @@
+# -*- mode: Snakemake -*-
+
+# Sequence Trimming Rules for Nanopore sequences
+
+rule init_seq_trim_sense:
+  input: str(Path(config["Seq_Path"]))
+  output:
+    trimmed=temp(RUN_DIR + "/processData/init.sense.trimmed.fastq.gz"),
+    untrimmed=temp(RUN_DIR + "/processData/init.sense.untrimmed.fastq.gz"),
+    tooshort=temp(RUN_DIR + "/processData/init.sense.tooshort.fastq.gz")
+  params:
+    seq=config["Init_Sense"],
+    error=config["Init_Error"],
+    min=config["Min_Size"],
+    overlap=int(config["Overlap_Prop"] * len(str(config["Init_Sense"])))
+  log:
+    RUN_DIR + "/logs/init.sense.trimmed.log"
+  shell:
+    """
+    cutadapt -g {params.seq} -e {params.error} -m {params.min} \
+      --overlap {params.overlap} \
+      --untrimmed-output {output.untrimmed} --too-short-output {output.tooshort} \
+      -o {output.trimmed} {input} > {log} 2>&1
+    """
+
+rule init_seq_trim_antisense:
+  input: str(Path(config["Seq_Path"]))
+  output:
+    trimmed=temp(RUN_DIR + "/processData/init.antisense.trimmed.fastq.gz"),
+    untrimmed=temp(RUN_DIR + "/processData/init.antisense.untrimmed.fastq.gz"),
+    tooshort=temp(RUN_DIR + "/processData/init.antisense.tooshort.fastq.gz")
+  params:
+    seq=config["Init_Antisense"],
+    error=config["Init_Error"],
+    min=config["Min_Size"],
+    overlap=int(config["Overlap_Prop"] * len(str(config["Init_Antisense"])))
+  log:
+    RUN_DIR + "/logs/init.antisense.trimmed.log"
+  shell:
+    """
+    cutadapt -g {params.seq} -e {params.error} -m {params.min} \
+      --overlap {params.overlap} \
+      --untrimmed-output {output.untrimmed} --too-short-output {output.tooshort} \
+      -o {output.trimmed} {input} > {log} 2>&1
+    """
+
+rule sense_barcode_5p_trim:
+  input: RUN_DIR + "/processData/init.sense.filt.fastq.gz"
+  output:
+    trimmed=temp(RUN_DIR + "/processData/{sample}.sense.bctrim.fastq.gz"),
+    untrimmed=temp(RUN_DIR + "/processData/{sample}.sense.unbctrim.fastq.gz")
+  params:
+    bc5=lambda wildcards: BC5p[wildcards.sample],
+    error=config["BC_Error"],
+    overlap=int(config["Overlap_Prop"] * BC5len)
+  log:
+    RUN_DIR + "/logs/{sample}.sense.bctrim.log"
+  shell:
+    """
+    cutadapt -g X{params.bc5} -e {params.error} --untrimmed-output {output.untrimmed} \
+      --overlap {params.overlap} -o {output.trimmed} {input} > {log} 2>&1
+    """
+
+rule antisense_barcode_5p_trim:
+  input: RUN_DIR + "/processData/init.antisense.filt.fastq.gz"
+  output:
+    trimmed=temp(RUN_DIR + "/processData/{sample}.antisense.bctrim.fastq.gz"),
+    untrimmed=temp(RUN_DIR + "/processData/{sample}.antisense.unbctrim.fastq.gz")
+  params:
+    bc5=lambda wildcards: BC3p[wildcards.sample],
+    error=config["BC_Error"],
+    overlap=int(config["Overlap_Prop"] * BC3len)
+  log:
+    RUN_DIR + "/logs/{sample}.sense.bctrim.log"
+  shell:
+    """
+    cutadapt -g X{params.bc5} -e {params.error} --untrimmed-output {output.untrimmed} \
+      --overlap {params.overlap} -o {output.trimmed} {input} > {log} 2>&1
+    """
+
+rule sense_5p_trim:
+  input: RUN_DIR + "/processData/{sample}.sense.bctrim.fastq.gz"
+  output:
+    trimmed=temp(RUN_DIR + "/processData/{sample}.sense.5ptrim.fastq.gz"),
+    untrimmed=temp(RUN_DIR + "/processData/{sample}.sense.notag.fastq.gz")
+  params:
+    tag5=config["TAG_5p_Seq"],
+    error=config["Tag_Error"],
+    overlap5p=int(config["Overlap_Prop"] * len(config["TAG_5p_Seq"]))    
+  log:
+    RUN_DIR + "/logs/{sample}.sense.5ptrim.log"
+  shell:
+    """
+    cutadapt -g "X{params.tag5};min_overlap={params.overlap5p}" -e {params.error} \
+      --untrimmed-output {output.untrimmed} -o {output.trimmed} {input} > {log} 2>&1
+    """
+
+rule antisense_5p_trim:
+  input: RUN_DIR + "/processData/{sample}.antisense.bctrim.fastq.gz"
+  output:
+    trimmed=temp(RUN_DIR + "/processData/{sample}.antisense.5ptrim.fastq.gz"),
+    untrimmed=temp(RUN_DIR + "/processData/{sample}.antisense.notag.fastq.gz")
+  params:
+    tag5=config["TAG_3p_Seq"],
+    error=config["Tag_Error"],
+    overlap5p=int(config["Overlap_Prop"] * len(config["TAG_3p_Seq"]))
+  log:
+    RUN_DIR + "/logs/{sample}.antisense.5ptrim.log"
+  shell:
+    """
+    cutadapt -g "X{params.tag5};min_overlap={params.overlap5p}" -e {params.error} \
+      --untrimmed-output {output.untrimmed} -o {output.trimmed} {input} > {log} 2>&1
+    """
+
+rule sense_full_trim:
+  input: RUN_DIR + "/processData/{sample}.sense.5ptrim.fastq.gz"
+  output:
+    trimmed=temp(RUN_DIR + "/processData/{sample}.sense.comtrim.fastq"),
+    untrimmed=temp(RUN_DIR + "/processData/{sample}.sense.inctrim.fastq")
+  params:
+    bc3=lambda wildcards: BC3p[wildcards.sample],
+    tag3=config["TAG_3p_Seq"],
+    error=config["Tag_Error"],
+    overlap3p=int(config["Overlap_Prop"] * (len(config["TAG_3p_Seq"]) + BC3len)),
+    cmd_path=ROOT_DIR + "/tools/bashtools/revcomp.sh"
+  log:
+    RUN_DIR + "/logs/{sample}.sense.fulltrim.log"
+  shell:
+    """
+    source {params.cmd_path}
+    ADAPTER=$(revcomp {params.bc3}{params.tag3})
+    cutadapt -a "${{ADAPTER}};min_overlap={params.overlap3p}" -e {params.error} \
+      --untrimmed-output {output.untrimmed} -x {wildcards.sample}.sp. \
+      -o {output.trimmed} {input} > {log} 2>&1
+    """
+
+rule antisense_full_trim:
+  input: RUN_DIR + "/processData/{sample}.antisense.5ptrim.fastq.gz"
+  output:
+    trimmed=temp(RUN_DIR + "/processData/{sample}.antisense.comtrim.fastq"),
+    untrimmed=temp(RUN_DIR + "/processData/{sample}.antisense.inctrim.fastq")
+  params:
+    bc3=lambda wildcards: BC5p[wildcards.sample],
+    tag3=config["TAG_5p_Seq"],
+    error=config["Tag_Error"],
+    overlap3p=int(config["Overlap_Prop"] * (len(config["TAG_5p_Seq"]) + BC5len)),
+    cmd_path=ROOT_DIR + "/tools/bashtools/revcomp.sh"
+  log:
+    RUN_DIR + "/logs/{sample}.antisense.fulltrim.log"
+  shell:
+    """
+    source {params.cmd_path}
+    ADAPTER=$(revcomp {params.bc3}{params.tag3})
+    cutadapt -a "${{ADAPTER}};min_overlap={params.overlap3p}" -e {params.error} \
+      --untrimmed-output {output.untrimmed} -x {wildcards.sample}.sp. \
+      -o {output.trimmed} {input} > {log} 2>&1
+    """

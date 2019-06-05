@@ -1,11 +1,12 @@
 # -*- mode: Snakemake -*-
-# Processing Rules
+# Processing Rules for Nanopore sequencing workflow
 
 rule post_align_process:
   input:
-    bam=RUN_DIR + "/processData/{sample}.post.bam",
-    bai=RUN_DIR + "/processData/{sample}.post.bai",
-    key=RUN_DIR + "/processData/{sample}.key.csv",
+    com_bam=RUN_DIR + "/processData/{sample}.com.bam",
+    com_bai=RUN_DIR + "/processData/{sample}.com.bai",
+    #inc_bam=RUN_DIR + "/processData/{sample}.inc.bam",
+    #inc_bai=RUN_DIR + "/processData/{sample}.inc.bai",
     con=ancient(RUN_DIR + "/config.yml"),
     ref=ROOT_DIR + "/genomes/" + PANEL + ".fasta"
   output:
@@ -15,7 +16,8 @@ rule post_align_process:
   log: RUN_DIR + "/logs/{sample}.postalgn.log"
   shell:
     """
-    Rscript {params} {input.bam} -i {input.bai} -k {input.key} -c {input.con} \
+    Rscript {params} {input.com_bam} \
+      -i {input.com_bai} -c {input.con} \
       -r {input.ref} -o {output.uniq} -a {output.chim} > {log} 2>&1
     """
 

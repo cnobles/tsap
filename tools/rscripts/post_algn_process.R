@@ -19,18 +19,18 @@ parser <- ArgumentParser(
 )
 
 parser$add_argument(
-  "bamFile", type = "character", 
-  help = "Path to bam file input."
+  "bamFile", type = "character", nargs = "+",
+  help = "Path to bam file input(s)."
 )
 
 parser$add_argument(
-  "-i", "--index", type = "character", 
-  help = "Path to index of bam file input."
+  "-i", "--index", type = "character", nargs = "+",
+  help = "Index file(s) for input(s). Need to provide the same number of index files as input files."
 )
 
 parser$add_argument(
-  "-k", "--key", type = "character", 
-  help = "Path to key file for appending read count data."
+  "-k", "--key", type = "character", nargs = "+",
+  help = "Path to key file(s) for appending read count data."
 )
 
 parser$add_argument(
@@ -51,11 +51,6 @@ parser$add_argument(
 parser$add_argument(
   "-r", "--ref", type = "character", 
   help = "Reference sequences specific to panel."
-)
-
-parser$add_argument(
-  "-t", "--target", type = "character", 
-  help = "Panel target file, csv format."
 )
 
 parser$add_argument(
@@ -95,7 +90,8 @@ pander("Post-alignment Processing Inputs\n")
 
 pander(
   data.frame(input_table, row.names = NULL),
-  row.names = FALSE, justify = "left")
+  row.names = FALSE, justify = "left"
+)
 
 
 # Script parameters and additional functions -----------------------------------
@@ -266,15 +262,19 @@ ref_seqinfo <- GenomeInfoDb::Seqinfo(
   seqnames = names(ref_seqs), 
   seqlengths = Biostrings::width(ref_seqs), 
   isCircular = rep(FALSE, length(ref_seqs)), 
-  genome = rep(config$RefGenome, length(ref_seqs)))
+  genome = rep(config$RefGenome, length(ref_seqs))
+)
 
 base_gen <- getGenome(config$RefGenome)
 
 ## Panel targets
 panel_targets <- read.csv(file.path(root_dir, config$Panel_Path))
+
 targets <- structure(panel_targets$locus, names = panel_targets$target)
+
 norm_targets <- normalizeTargets(
-  targets, base_gen, ref_seqs, ref_seqinfo, return = "granges")
+  targets, base_gen, ref_seqs, ref_seqinfo, return = "granges"
+)
 
 ## Load key file
 if(!is.null(args$key)){
@@ -286,20 +286,60 @@ if(!is.null(args$key)){
 
 ## Load bam file and collect relevent data
 bam_env <- new.env()
-bam_env$bam <- unlist(
-  Rsamtools::scanBam(
-    args$bamFile, 
-    index = args$index, 
-    param = Rsamtools::ScanBamParam(what = bam_params, tag = bam_tags)),
-  recursive = FALSE) 
-bam_env$bam_df <- as.data.frame(bam_env$bam[seq_along(bam_params)])
+
+bam_env$bams <- lapply(seq_along(args$bamFile), function(i){
+  unlist(
+    Rsamtools::scanBam(
+      args$bamFile[i], 
+      index = args$index[i],
+      param = Rsamtools::ScanBamParam(what = bam_params, tag = bam_tags)),
+    recursive = FALSE)
+})
+
+bam_env$bam_dfs <- lapply(bam_env$bams, function(x){
+    as.data.frame(x[seq_along(bam_params)])
+  })
+
 null <- lapply(bam_tags, function(t, src){
-  bam_env$bam_df[,t] <- src$tag[[t]]
-  }, src = bam_env$bam)
-bam <- bam_env$bam_df
+    lapply(seq_along(src), function(i){
+      bam_env$bam_dfs[[i]][,t] <- src[[i]]$tag[[t]]
+    })
+  }, 
+  src = bam_env$bams
+)
+
+bam <- dplyr::bind_rows(bam_env$bam_dfs)
 names(bam) <- tolower(names(bam))
 null_algns <- bam[which(is.na(bam$rname)),]
 bam <- bam[!is.na(bam$rname),]
+
+if( nrow(bam) == 0){
+  
+  # Output empty files
+  null_frame <- data.frame(
+    qname = vector(), flag = vector(), rname = vector(), pos = vector(), 
+    qwidth = vector(), mapq = vector(), cigar = vector(), md = vector(), 
+    in.cnt = vector(), in.max = vector(), del.cnt = vector(), 
+    del.max = vector(), tar.indel = vector(), count = vector()
+  )
+  
+  write.csv(null_frame, file = args$output, quote = FALSE, row.names = FALSE)
+  
+  if(!is.null(args$chimera)){
+    
+    null_chim <- data.frame(
+      qname = vector(), pri.seq = vector(), pri.start = vector(), 
+      pri.width = vector(), sec.seq = vector(), sec.start = vector(), 
+      sec.width =vector()
+    )
+    
+    write.csv(null_chim, file = args$chimera, quote = FALSE, row.names = FALSE)
+    
+  }
+  
+  q()
+  
+}
 
 # Summarize data and conduct prelimininary analysis ----------------------------
 ## Generate data.frame of unique alignment data
@@ -314,17 +354,22 @@ uniq_algns <- dplyr::group_by(bam, qname) %>%
 
 uniq_indel_grl <- uniq_algns %$%
   cigarRanges(
-    rname, cigar, pos, sym = c("D", "I"), seq.info = ref_seqinfo)
+    rname, cigar, pos, sym = c("D", "I"), seq.info = ref_seqinfo
+  )
 
 indel_algns <- S4Vectors::subjectHits(GenomicRanges::findOverlaps(
-    norm_targets, uniq_indel_grl, maxgap = config$maxDistFromEdit))
+  norm_targets, uniq_indel_grl, maxgap = config$maxDistFromEdit
+))
 
 uniq_algns <- dplyr::mutate(
-  uniq_algns, tar.indel = seq_len(n()) %in% 
-    as.numeric(names(uniq_indel_grl[indel_algns])))
+  uniq_algns, 
+  tar.indel = seq_len(n()) %in% as.numeric(names(uniq_indel_grl[indel_algns]))
+)
 
 if(!is.null(args$key)){
   uniq_algns <- dplyr::left_join(uniq_algns, key, by = c("qname" = "seqID"))
+}else{
+  uniq_algns <- dplyr::mutate(uniq_algns, count = 1)
 }
 
 ## Generate data.frame of chimeric or translocation alignments

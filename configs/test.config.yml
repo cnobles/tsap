@@ -5,6 +5,7 @@ Supplemental_Info : "sampleInfo/test.supp.csv"
 Panel : "panel.test"
 Panel_Path : "panels/panel.test.csv"
 RefGenome : "hg38"
+Platform : "illumina"
 
 # Sequence files
 Seq_Path: "analysis/test/input_data/"
@@ -15,16 +16,24 @@ I2: "test.I2.fastq.gz"
 
 # SampleInfo formating
 Sample_Name_Column : "sampleName"
+BC5p : "sampleInfo:barcode1"
+BC3p : "sampleInfo:barcode2"
 
-# Sequence information
+# Sequence information, leave empty "" if using different platform 
+## Illumina Platform
 R1_Leading_Trim : "."
 R1_Overreading_Trim : "AGATCGGAAGAGCACACGTC"
 R2_Leading_Trim : "."
 R2_Overreading_Trim : "AGATCGGAAGAGCGTCGTGT"
+## Nanopore
+Init_Sense : "AATGATACGGCGACCACCGAGATCTACAC"
+Init_Antisense : "CAAGCAGAAGACGGCATACGAGAT"
+TAG_5p_Seq : "ACACTCTTTCCCTACACGACGCTCTTCCGATCT"
+TAG_3p_Seq : "GTGACTGGAGTTCAGACGTGTGCTCTTCCGATCT"
 
 
 # ------------------------------------------------------------------------------
-# Vivi configuration
+# TsAP configuration
 Read_Types : ["R1", "R2", "I1", "I2"]
 Genomic_Reads : ["R1", "R2"]
 
@@ -47,11 +56,21 @@ R2leadMismatch : 0
 R2overMismatch : 1
 R2overMaxLength : 20
 
+# Nanopore Trimming Params
+Init_Error : 0.2
+Min_Size : 500
+Tag_Error : 0.2
+
 # Uniting paired-end Reads
 pearParams : "-p 1.0 -n 30"
 
 # Reference Alignment
+# Panel param
+Max_Length : 400
+## Illumina BWA params
 BWAparams : "-k 30 -w 150"
+## Nanopore BWA params
+npBWAparams : "-x ont2d"
 
 # Post-Alignment Processing
 maxDistFromEdit : 20

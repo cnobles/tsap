@@ -7,8 +7,10 @@ channels:
 dependencies:
   - snakemake
   - bwa
+  - graphmap
   - samtools
   - pear >= 0.9.6
+  - cutadapt
   - graphviz
   - pandoc
   - semantic_version

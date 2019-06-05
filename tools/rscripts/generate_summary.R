@@ -410,11 +410,13 @@ ucid_analysis <- function(input, targets, edit.dist, seq_info, pct_ID = 0.95){
   input %>%
     dplyr::mutate(
       is.com = seq_len(n()) %in% uniq_M_idx,
-      is.ins = seq_len(n()) %in% uniq_I_idx,
-      is.del = seq_len(n()) %in% uniq_D_idx,
-      is.unc = !is.com & !is.ins & !is.del,
+      is.ins = seq_len(n()) %in% uniq_I_idx & !seq_len(n()) %in% uniq_D_idx,
+      is.del = seq_len(n()) %in% uniq_D_idx & !seq_len(n()) %in% uniq_I_idx,
+      is.ind = seq_len(n()) %in% uniq_I_idx & seq_len(n()) %in% uniq_D_idx,
+      is.unc = !is.com & !is.ins & !is.del & !is.ind,
       del.oof = del.cnt %% 3 != 0,
-      ins.oof = in.cnt %% 3 != 0
+      ins.oof = in.cnt %% 3 != 0,
+      ind.oof = (in.cnt - del.cnt) %% 3 != 0
     ) %>%
     dplyr::group_by(specimen, rname) %>%
     dplyr::summarise(
@@ -423,8 +425,10 @@ ucid_analysis <- function(input, targets, edit.dist, seq_info, pct_ID = 0.95){
       com.freq = sum(count[is.com]) / sum(count),
       in.freq = sum(count[is.ins]) / sum(count),
       in.oof = sum(count[is.ins & ins.oof]) / sum(count),
-      del.freq = sum(count[is.del]) / sum(count),
-      del.oof = sum(count[is.del & del.oof]) / sum(count)
+      del.freq = sum(count[is.del ]) / sum(count),
+      del.oof = sum(count[is.del & del.oof]) / sum(count),
+      indel.freq = sum(count[is.ind]) / sum(count),
+      ind.oof = sum(count[is.ind & ind.oof]) / sum(count)
     ) %>%
     dplyr::ungroup()
   
@@ -540,7 +544,10 @@ plot_indel_cov <- function(gr, target, totals, min_dist = 50L){
     dplyr::select(-group) %>%
     dplyr::rename(rname = group_name) %>%
     dplyr::left_join(totals, by = c("specimen", "rname")) %>%
-    dplyr::mutate(coverage = value / count) %>%
+    dplyr::mutate(
+      adj_value = ifelse(value > count, count, value),
+      coverage = adj_value / count
+    ) %>%
     dplyr::filter(rname %in% unique(seqnames(gr)))
 
   del_df <- grl$D %>%
@@ -605,7 +612,9 @@ plot_indel_cov <- function(gr, target, totals, min_dist = 50L){
     dplyr::arrange(rname) %>%
     dplyr::mutate(
       pos = pos - target_sites$pos[match(rname, target_sites$seqnames)],
-      rname = paste0(as.character(rname), " (", pNums(count), " reads)"),
+      rname = paste0(
+        as.character(rname), " (", pNums(count, digits = 0), " reads)"
+      ),
       rname = factor(rname, levels = unique(rname))
     )
 
@@ -616,6 +625,7 @@ plot_indel_cov <- function(gr, target, totals, min_dist = 50L){
       min_x = min(pos),
       max_x = max(pos),
       max_cov = max(coverage),
+      max_cov_x = pos[which(coverage == max_cov)[1]],
       max_cov_format = paste0(
         pNums(100 * max_cov, round = 1, digits = 1), 
         "%"
@@ -629,6 +639,7 @@ plot_indel_cov <- function(gr, target, totals, min_dist = 50L){
       min_x = min(pos),
       max_x = max(pos),
       min_cov = min(coverage),
+      min_cov_x = pos[which(coverage == min_cov)[1]],
       min_cov_format = paste0(
         pNums(100 * (1-min(coverage)), round = 1, digits = 1), 
         "%"
@@ -636,24 +647,39 @@ plot_indel_cov <- function(gr, target, totals, min_dist = 50L){
     )
     
   ggplot() + 
-    geom_bar(
+    geom_hline(yintercept = 1, color = "grey75") +
+    geom_ribbon(
       data = dplyr::filter(df, symbol == "D"),
-      aes(x = pos, y = coverage), 
-      fill = "grey40", width = 1L, stat = "identity"
+      aes(x = pos, ymin = 0, ymax = coverage), 
+      fill = "grey40", stat = "identity"
     ) +
-    geom_bar(
+    geom_ribbon(
       data = dplyr::filter(df, symbol == "I"),
-      aes(x = pos, y = coverage), 
-      fill = "green", width = 1L, stat = "identity"
+      aes(x = pos, ymin = 0, ymax = coverage), 
+      fill = "green", stat = "identity"
     ) +
+    #geom_rect(
+    #  data = del_mins,
+    #  aes(
+    #    xmin = min_cov_x - 0.5, xmax = min_cov_x + 0.5, ymin = min_cov, ymax = 1
+    #  ),
+    #  color = "white"
+    #) +
+    #geom_rect(
+    #  data = ins_maxs,
+    #  aes(
+    #    xmin = max_cov_x - 0.5, xmax = max_cov_x + 0.5, ymin = 0, ymax = max_cov
+    #  ),
+    #  color = "green"
+    #) +
     geom_segment(
       data = del_mins, 
-      aes(x = min_x, xend = 0, y = min_cov, yend = min_cov), 
+      aes(x = min_x, xend = min_cov_x, y = min_cov, yend = min_cov), 
       color = "white", alpha = 0.5
     ) +
     geom_segment(
       data = ins_maxs, 
-      aes(x = 0, xend = max_x, y = max_cov, yend = max_cov), 
+      aes(x = max_cov_x, xend = max_x, y = max_cov, yend = max_cov), 
       color = "green", alpha = 0.5
     ) +
     geom_text(
@@ -680,13 +706,13 @@ plot_indel_cov <- function(gr, target, totals, min_dist = 50L){
       hjust = 1, vjust = 1, nudge_x = -2.5, nudge_y = -0.02,
       color = "green", fontface = "bold"
     ) +
-    scale_y_continuous(breaks = c(0, 1), labels = c(1, 0)) +
+    scale_y_continuous(breaks = c(0, 1), labels = c(0, 1)) +
     facet_wrap(
       ~ rname, ncol = nrow(target), nrow = 1, scales = "free", drop = TRUE
     ) +
     labs(
       x = "Edit Position", 
-      y = "Proportion Edited", 
+      y = "Proportion of Reads", 
       title = paste0("Specimen: ", unique(gr$specimen))
     )
   
@@ -846,6 +872,8 @@ if( any(input_uniq$edit == "null") ){
 mut_uniq_gr <- input_uniq %$%
   cigarRanges(rname, cigar, pos, sym = "ID", seq.info = ref_seqinfo) %>%
   unlist()
+
+#edit_gr <- mut_uniq_gr
 
 edit_gr <- GenomicRanges::findOverlaps(
     norm_targets, mut_uniq_gr, maxgap = config$maxDistFromEdit
